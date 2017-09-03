@@ -1,0 +1,83 @@
+如果 kubernetes 的启动参数中有 --logtostderr=true 表示使用 systemd 接管 kubernetes 的输出，可以用 journalctl 查看，如下，
+
+ [root@Centos-L410 project]# journalctl -u kube-controller-manager | tail
+ 3月 20 11:50:01 Centos-L410 kube-controller-manager[9359]: W0320 11:50:01.599523    9359 reflector.go:224] /usr/lib/golang/src/runtime/asm_amd64.s:2232: watch of *api.PersistentVolume ended with: 502:  (unhandled http status [OK] with body [nil]) [0]
+ 3月 20 11:50:01 Centos-L410 kube-controller-manager[9359]: E0320 11:50:01.912642    9359 reflector.go:206] /usr/lib/golang/src/runtime/asm_amd64.s:2232: Failed to watch *api.Pod: Internal error occurred: too old resource version: 7704 (8379)
+ 3月 20 11:50:01 Centos-L410 kube-controller-manager[9359]: E0320 11:50:01.914766    9359 reflector.go:206] /usr/lib/golang/src/runtime/asm_amd64.s:2232: Failed to watch *api.Pod: Internal error occurred: too old resource version: 7704 (8379)
+ 3月 20 11:50:01 Centos-L410 kube-controller-manager[9359]: E0320 11:50:01.915664    9359 reflector.go:206] /usr/lib/golang/src/runtime/asm_amd64.s:2232: Failed to watch *api.Pod: Internal error occurred: too old resource version: 7704 (8379)
+ 3月 20 11:50:01 Centos-L410 kube-controller-manager[9359]: W0320 11:50:01.967267    9359 reflector.go:224] /usr/lib/golang/src/runtime/asm_amd64.s:2232: watch of *api.Namespace ended with: 502:  (unhandled http status [OK] with body [nil]) [0]
+ 3月 20 12:59:06 Centos-L410 kube-controller-manager[9359]: I0320 12:59:06.597924    9359 replication_controller.go:409] Replication Controller has been deleted default/Redis-master
+ 3月 20 12:59:08 Centos-L410 kube-controller-manager[9359]: I0320 12:59:08.708102    9359 replication_controller.go:409] Replication Controller has been deleted default/redis-slave
+ 3月 20 12:59:10 Centos-L410 kube-controller-manager[9359]: I0320 12:59:10.770278    9359 replication_controller.go:409] Replication Controller has been deleted default/frontend
+ 3月 20 12:59:41 Centos-L410 kube-controller-manager[9359]: I0320 12:59:41.859582    9359 event.go:216] Event(api.ObjectReference{Kind:"ReplicationController", Namespace:"default", Name:"redis-master", UID:"8e5fcf11-ee58-11e5-a10f-c80aa9c034dc", APIVersion:"v1", ResourceVersion:"8904", FieldPath:""}): reason: 'SuccessfulCreate' Created pod: redis-master-xuv93
+ 
+
+从 log 中可以发现，刚刚创建了一个 redis-master-xuv93 的 Pod，这个 Pod 中运行了一个 redis。通过 docker ps 可以查看到对应的容器，
+
+
+ [root@Centos-L410 project]# docker ps
+ CONTAINER ID        IMAGE                                                        COMMAND                  CREATED             STATUS              PORTS               NAMES
+ 56f58c6fb142        kubeguide/redis-master:1.0                                   "redis-server /etc/re"   About an hour ago   Up About an hour                        k8s_master.b7750720_redis-master-xuv93_default_8e614b60-ee58-11e5-a10f-c80aa9c034dc_bb2168d8
+ d377dcefdbc5        registry.access.redhat.com/rhel7/pod-infrastructure:latest   "/pod"                   About an hour ago   Up About an hour                        k8s_POD.4f810ae8_redis-master-xuv93_default_8e614b60-ee58-11e5-a10f-c80aa9c034dc_270230ab
+ 
+
+可以发现，当前有2个容器在运行，56f58c6fb142 就是 redis-master-xuv93 这个 Pod 对应的容器；另一个是 kubernetes 的控制节点，是 Pod 网络访问代理。可以用 docker inspect 查看这两个节点的 IP ，
+
+
+ [root@Centos-L410 arnes]# docker inspect  56f58c6fb142
+ ......
+         "Env": [
+             "KUBERNETES_SERVICE_HOST=10.254.0.1",
+             "KUBERNETES_SERVICE_PORT=443",
+             "KUBERNETES_PORT=tcp://10.254.0.1:443",
+             "REDIS_MASTER_SERVICE_HOST=10.254.225.16",
+             "REDIS_MASTER_PORT_6379_TCP_PROTO=tcp",
+             "KUBERNETES_PORT_443_TCP_PROTO=tcp",
+             "KUBERNETES_PORT_443_TCP_PORT=443",
+             "REDIS_MASTER_SERVICE_PORT=6379",
+             "REDIS_MASTER_PORT=tcp://10.254.225.16:6379",
+             "REDIS_MASTER_PORT_6379_TCP=tcp://10.254.225.16:6379",
+             "REDIS_MASTER_PORT_6379_TCP_PORT=6379",
+             "REDIS_MASTER_PORT_6379_TCP_ADDR=10.254.225.16",
+             "KUBERNETES_SERVICE_PORT_HTTPS=443",
+             "KUBERNETES_PORT_443_TCP=tcp://10.254.0.1:443",
+             "KUBERNETES_PORT_443_TCP_ADDR=10.254.0.1",
+             "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+             "HOME=/root"
+         ],
+ ......
+ 
+
+从容器的信息上来看，redis 容器 56f58c6fb142 本身并没有 IP 地址，但是，通过容器内部互联，监听了 10.254.225.16:6379 这个 虚拟IP+端口，因此，直接访问 10.254.225.16:6379 即可，如下，
+
+
+ [root@Centos-L410 project]# telnet 10.254.225.16 6379
+ Trying 10.254.225.16...
+ Connected to 10.254.225.16.
+ Escape character is '^]'.
+ ^]
+
+ telnet> q
+ Connection closed.
+ 
+
+另外，由于 d377dcefdbc5 是 redis 的访问代理，因此，访问这个地址的6379端口，也是可以通的，如下，
+
+
+ [root@Centos-L410 project]# telnet 172.17.1.22 6379
+ Trying 172.17.1.22...
+ Connected to 172.17.1.22.
+ Escape character is '^]'.
+ ^]
+
+ telnet> q
+ Connection closed.
+ 
+
+可以验证，这个 redis 服务的确是在监听 10.254.225.16:6379，只不过这个是 kubernetes service 的虚拟 IP，
+
+
+ [root@Centos-L410 project]# kubectl get services
+ NAME           CLUSTER_IP      EXTERNAL_IP   PORT(S)    SELECTOR            AGE
+ kubernetes     10.254.0.1      <none>        443/TCP    <none>              20d
+ redis-master   10.254.225.16   <none>        6379/TCP   name=redis-master   1h 
