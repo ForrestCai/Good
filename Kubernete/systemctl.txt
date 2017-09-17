@@ -1,0 +1,1 @@
+systemctl -a|grep kube
