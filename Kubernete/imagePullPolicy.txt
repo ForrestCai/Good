@@ -1,0 +1,32 @@
+现在列出在centos7上做成demo步骤。
+
+1. ?内核及软件版本?
+# cat /etc/redhat-release?
+CentOS Linux release 7.2.1511 (Core)?
+# rpm -qa |grep kubernete
+kubernetes-client-1.2.0-0.12.gita4463d9.el7.x86_64
+kubernetes-1.2.0-0.12.gita4463d9.el7.x86_64
+kubernetes-master-1.2.0-0.12.gita4463d9.el7.x86_64
+kubernetes-node-1.2.0-0.12.gita4463d9.el7.x86_64
+
+2. ?pull image
+作者在hub.docker.com上挂出来镜像。因为你懂的原因，下载速度实在是非常蛋疼。
+所以建议事先下载好。
+然后其他环境需要的话，直接docker save/load 就可以了，不需要再次下载。
+P.S. ?但是启动pod时候，kubernetes默认会跳过我们环境中已经导入的镜像，而从网上重新pull。为了避免重复下载，只需要改个参数就行。后续会介绍。
+
+3. 修改controller文件。
+上面说到：kubernetes默认会跳过我们环境中已经导入的镜像，而从网上重新pull。所以我们只需要在controller文件中添加下列语句就好：
+# cat redis-master-controller.yaml?
+apiVersion: v1
+kind: ReplicationController
+? ..... ?(omit) .........
+? ? ? - name: master
+? ? ? ? image: kubeguide/redis-master
+? ?? ?imagePullPolicy: IfNotPresent ? ? ? ? ?<--- 加上这个。每个controller文件都要加。这就代表如果环境中有image就不用重新下。
+? ? ? ? ports:
+? ? ? ? - containerPort: 6379
+
+4. 先创建service，再创建RC
+虽然书中说谁先谁后没关系，但是我亲自验证后发现，如果先创建RC，再创建service的话：启动的container里面，会丢失pod中通信用到的env：REDIS开头的一堆env都会丢失。
+所以必须先创建service，再创建对应的RC
