@@ -1,0 +1,76 @@
+SQL SERVER中中获取不重复数据：
+select top 1 * from orders with(UPDLOCK ,READPAST,RowLock) where Id=1
+1
+2
+READPAST 
+指定数据库引擎不读取由其他事务锁定的行。在大多数情况下，这同样适用于页。如果指定了 READPAST，则行级锁和页级锁都将被跳过。也就是说，数据库引擎将跳过这些行或页，而不是阻塞当前事务直到锁被释放。例如，假设表 T1 包含一个单精度整数列，其值为 1、2、3、4 和 5。如果事务 A 将值 3 更改为 8，但尚未提交，则 SELECT * FROM T1 (READPAST) 将生成值 1、2、4 和 5。使用 SQL Server 表实现工作队列时，READPAST 主要用于减少锁定争用。使用 READPAST 的队列读取器会跳过被其他事务锁定的队列项，跳至下一个可用的队列项，而不是等待其他事务释放锁。 
+可为 UPDATE 或 DELETE 语句中以及 FROM 子句中引用的任何表指定 READPAST。如果 READPAST 是在 UPDATE 语句中指定的，则仅当读取数据以标识要更新的记录时才应用 READPAST，而不考虑语句中指定 READPAST 的位置。不能为 INSERT 语句的 INTO 子句中的表指定 READPAST。使用 READPAST 的读操作不会发生阻塞。读取外键或索引视图或者修改辅助索引时，使用 READPAST 的更新或删除操作可能发生阻塞。 
+仅可在运行于 READ COMMITTED 或 REPEATABLE READ 隔离级别的事务中指定 READPAST。在从 SNAPSHOT 隔离级别操作的事务中指定时，READPAST 必须与需要锁的其他表提示（例如，UPDLOCK 和 HOLDLOCK）组合。
+
+
+
+With(ReadPast)就不会被阻塞吗？ 
+
+在生产环境中，会有很多使用ReadPast查询提示的场合，来避免正在被其它事务锁定的行对当前查询造成阻塞，而又不会获取到“脏数据”。
+可是很多人都疑惑，为什么我使用了ReadPast仍然有时会被阻塞？
+首先我们找到联机帮助：
+READPAST
+指定数据库引擎不读取由其他事务锁定的行。 如果指定了 READPAST，将跳过行级锁。 也就是说，数据库引擎将跳过这些行，而不是阻塞当前事务直到锁被释放。 例如，假设表 T1 包含一个单精度整数列，其值为 1、2、3、4 和 5。 如果事务 A 将值 3 更改为 8，但尚未提交，则 SELECT * FROM T1 (READPAST) 将生成值 1、2、4 和 5。 使用 SQL Server 表实现工作队列时，READPAST 主要用于减少锁定争用。 使用 READPAST 的队列读取器会跳过被其他事务锁定的队列项，跳至下一个可用的队列项，而不是等待其他事务释放锁。
+一切看起来都很美好，但是请看如下场景：
+表名[IP]，聚集索引字段：BIP
+会话一：
+
+BEGIN TRAN
+    SELECT * FROM ip WITH(XLOCK) WHERE BIP='1.10.8.0'
+然后去会话二，执行： 
+SELECT * FROM ip WITH(READPAST) 
+发现会话二被阻塞了
+
+Why？
+我们通过系统视图sys.dm_tran_locks来看看发生了什么：
+SELECT request_session_id, resource_type, 
+    request_status, request_mode,
+    resource_description, object_name(p.object_id) as object_name,p.index_id
+    FROM sys.dm_tran_locks left join sys.partitions p
+on sys.dm_tran_locks.resource_associated_entity_id = p.hobt_id
+
+
+上图中可以看到，会话二(ID61)中的select妄图获取page(1:23952)上的S共享锁，却被会话一(ID56)在该page上的IX意向排它锁给拦住了
+为什么？说好的会跳过其它事务锁定的行呢？
+“等等，你刚才说的最后一个字是什么？”
+“呢”？
+“不是，再上一个！“
+”行“？
+”对了！“
+指定数据库引擎不读取由其他事务锁定的行。 如果指定了 READPAST，将跳过行级锁。
+在会话二中，我们使用了select * ，并且没有where条件，执行计划会使用聚集索引扫描：
+
+扫描意味着什么？在每个扫描过的page上都会加S共享锁！！
+
+而，如果指定where条件，并且执行计划是聚集索引查找的话，则只会在所查找的页面上获取IS意向共享锁!
+（该查询返回空结果集）
+
+
+知道了以上区别，我们再来看看SQLServer锁兼容图表：
+
+
+再来回想一下整个过程，在会话一中，我们使用XLOCK提示，使得SQLServer获取了一个Page上的意向排它锁IX，并且保持事务。
+在会话二中我们使用了聚集索引扫描的查询计划，使得在每一个页面上都会申请S共享锁，从上面的图红圈处可见，S是与IX互斥的，故该查询会被阻塞，而指定了where条件的查询，申请的是page上的IS意向共享锁，上面图绿圈处可见，IS与IX是不冲突的，故不会被阻塞。
+?
+说到这里，我有想起了锁提示ROWLOCK，联机丛书解释如下：
+ROWLOCK
+指定通常采用页锁或表锁时，采用行锁。 在从 SNAPSHOT 隔离级别操作的事务中指定时，除非将 ROWLOCK 与需要锁的其他表提示（例如，UPDLOCK 和 HOLDLOCK）组合，否则不会取得行锁。
+?
+听这解释，貌似可以解决我们上面说的阻塞的问题啊，那让我们来试一下：
+?
+SELECT * FROM ip WITH(ROWLOCK) 
+果然可以！！
+我们看一下这个查询提示获取的是什么锁：
+
+噢！它获取的是PAGE上的意向共享锁，和指定where条件时在查找的页上获取的锁是相同的，所以没有被阻塞！
+?
+总结：
+??????? SQLServer每个阻塞都是有原因的，瞬间的、少量的阻塞并不是不可原谅的，在高并发的系统中都是正常的，但是频繁的，长时间的阻塞（个人认为200ms以上都是值得注意的），就应该引起DBA的重视，搞清楚原因是什么。阻塞源没有尽快完成事务的原因多种多样，可能是事务内的的语句效率问题，可能是程序端调用时出现了交互或者中途错误、可能是数据库服务器系统资源出了问题。
+总之，DBA会一直和阻塞、死锁做着长期的、不懈的斗争。。。。。
+
+
