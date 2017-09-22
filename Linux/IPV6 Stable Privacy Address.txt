@@ -1,0 +1,7 @@
+Stable Privacy Address在kernel中的实现code
+
+一般情况下，在对应的网卡启动的时候，如果支持IPV6，且软件的IPV6功能使能，就会自动配置一个Link local地址，这个link local地址就是以fe80开头，同时有了link local地址之后，系统就会发送一个RS的packet到网络中去，如果路由器支持IPV6，收到这个RS之后，会回复一个携带prefix信息的RA包，Host收到RA包之后，提取prefix，生成interface id，组成一个global地址，这个过程就是无状态地址配置的过程.
+
+RS packet : 
+
+从图中看出，属于ICMPV6协议的封包，使用link local address发送，目的地址是路由器多播组
