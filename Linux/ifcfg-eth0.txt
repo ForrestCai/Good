@@ -1,0 +1,62 @@
+在Windows上配置网络比较容易，有图形化界面可操作。在Linux中往往是通过命令修改文件的方式配置网络，因此不仅需要知道配置哪个文件，还要知道文件中每个配置参数的功能。在Redhat/Fedora等Linux中，网络配置文件一般是/etc/sysconfig/network-scripts/ifcfg-eth0；而在SLES 10中却是/etc/sysconfig/network/ifcfg-eth-id-xx:xx:xx:xx:xx:xx（后面是该网络接口的MAC地址）；在SLES 11中是/etc/sysconfig/network/ifcfg-eth0。
+? ? ? ??在一个计算机系统中，可以有多个网络接口，分别对应多个网络接口配置文件，在/etc/sysconfig/network-scripts/目录下，依次编号的文件是ifcfg-eth0，ifcfg-eth1，...，ifcfg-eth<X>。常用的是ifcfg-eth0，表示第一个网络接口配置文件。
+? ? ? ??ifcfg-eth0示例：
+
+[plain] view plain copy
+
+ 
+TYPE=Ethernet??
+DEVICE=eth0??
+BOOTPROTO=none??
+ONBOOT=yes??
+IPADDR=10.0.1.27??
+NETMASK=255.255.255.0??
+GATEWAY=10.0.1.1??
+BROADCAST=10.10.1.255??
+HWADDR=00:0C:29:13:5D:74??
+PEERDNS=yes??
+DNS1=10.0.1.41??
+USERCTL=no??
+NM_CONTROLLED=no??
+IPV6INIT=yes??
+IPV6ADDR=FD55:faaf:e1ab:1B0D:10:14:24:106/64??
+
+1. 配置参数说明
+注：这些参数值不区分大小写，不区分单引号和双引号，甚至可以不用引号。
+TYPE：配置文件接口类型。在/etc/sysconfig/network-scripts/目录有多种网络配置文件，有Ethernet 、IPsec等类型，网络接口类型为Ethernet。
+DEVICE：网络接口名称
+BOOTPROTO：系统启动地址协议
+
+none：不使用启动地址协议
+bootp：BOOTP协议
+dhcp：DHCP动态地址协议
+static：静态地址协议
+
+ONBOOT：系统启动时是否激活
+
+yes：系统启动时激活该网络接口
+no：系统启动时不激活该网络接口
+
+IPADDR：IP地址
+NETMASK：子网掩码
+GATEWAY：网关地址
+BROADCAST：广播地址
+HWADDR/MACADDR：MAC地址。只需设置其中一个，同时设置时不能相互冲突。
+PEERDNS：是否指定DNS。如果使用DHCP协议，默认为yes。
+yes：如果DNS设置，修改/etc/resolv.conf中的DNS
+no：不修改/etc/resolv.conf中的DNS
+DNS{1, 2}：DNS地址。当PEERDNS为yes时会被写入/etc/resolv.conf中。
+NM_CONTROLLED：是否由Network Manager控制该网络接口。修改保存后立即生效，无需重启。被其坑过几次，建议一般设为no。
+yes：由Network Manager控制
+no：不由Network Manager控制
+USERCTL：用户权限控制
+yes：非root用户允许控制该网络接口
+no：非root用户不运行控制该网络接口
+IPV6INIT：是否执行IPv6
+yes：支持IPv6
+no：不支持IPv6
+IPV6ADDR：IPv6地址/前缀长度
+2. 配置生效
+修改网络配置，最简单地是使用ifconfig命令，无需重启，立即生效。关于ifconfig的知识在博文《Linux命令 — 设置或查看网络配置命令ifconfig》中有详细介绍。ifconfig配置的网络只是当前临时有效，当计算机重启之后就失效了。为了使网络配置永久有效，就需要在/etc/sysconfig/network-scripts/下修改网络接口配置文件。但是，这些文件修改后，并不能立即生效。有两种方式使修改文件的网络配置生效：
+1） 执行service network restart命令，重启网络服务（推荐）
+2） 重启计算机

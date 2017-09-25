@@ -1,0 +1,20 @@
+sudo docker run -d -p 5000:5000 -v /opt/data/registry:/tmp/registry registry
+
+
+
+
+client:
+
+
+vi /etc/sysconfig/docker
+
+ vi /usr/lib/systemd/system/docker.service
+
+
+ systemctl daemon-reload
+
+
+
+
+curl -XGET 192.168.0.128:5000/v2/_catalog
+
