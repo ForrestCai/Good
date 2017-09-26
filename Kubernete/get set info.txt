@@ -19,3 +19,15 @@ kubectl set image deployment/testservice1-deployment testservice1="192.168.0.128
 kubectl set image deployment/testservice2-deployment testservice2="192.168.0.128:5000/testservice:1.0.0-RC2"
 
 kubectl describe po -l app=testservice1 |grep Node
+
+
+
+deploymentCount=`kubectl get deployment |wc |awk '{print $1}'`
+echo $deploymentCount
+
+for((i=2;i<=$deploymentCount;i++));do
+    deployment=`kubectl get deployment |awk 'NR=='$i'{print $1}'`
+    arr=$(echo $deployment|tr "-" "\n")
+    echo ${arr[0]}
+    echo $deployment;
+done;
