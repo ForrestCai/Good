@@ -1,0 +1,21 @@
+kubectl get deployment -o yaml -l app=testservice |grep image:
+
+
+kubectl set image deployment/testservice-deployment testservice="192.168.0.128:5000/testservice:1.0.0-RC2"
+
+
+for mbbservice in testservice1 testservice2; do
+    echo $mbbservice >> test.txt
+    kubectl get deployment -o yaml -l app=$mbbservice |grep image: >> test.txt
+done
+
+
+for mbbservice in testservice1 testservice2; do
+    echo $mbbservice
+    kubectl get deployment -o yaml -l app=$mbbservice |grep image:
+done
+
+kubectl set image deployment/testservice1-deployment testservice1="192.168.0.128:5000/testservice:1.0.0-RC2"
+kubectl set image deployment/testservice2-deployment testservice2="192.168.0.128:5000/testservice:1.0.0-RC2"
+
+kubectl describe po -l app=testservice1 |grep Node

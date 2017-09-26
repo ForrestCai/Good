@@ -1,0 +1,5 @@
+1. 可能会遇到pod状态一直处于Penning的问题，此时可以通过kubectl describe pods/pod-name来查看pod信息，如果没有出错信息，那么Minion一直处于下载镜像中，下载好之后pod即会成功启动。
+
+
+
+2. /etc/kubernetes/kubelet  KUBELET_ADDRESS="--address=0.0.0.0"
