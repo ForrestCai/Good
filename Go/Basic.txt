@@ -1,0 +1,9 @@
+https://github.com/golang/tools
+
+
+GPATHµÄ C:\Go\gopath\src\golang.org\x
+
+go install golang.org/x/tools/cmd/goimports
+
+
+
