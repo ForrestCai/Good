@@ -1,0 +1,156 @@
+　　下面我们将主要介绍运行在Kubernetes集群中的容器所能够感知到的上下文环境，以及容器是如何获知这些信息的。
+　　首先，Kubernetes提供了一个能够让容器感知到集群中正在发生的事情的方法：环境变量。作为容器环境组成的一部分，这些集群信息对于容器构建“集群环境感知”起着非常重要的作用。其次，Kubernetes容器环境还包括一系列与容器生命周期相关的容器钩子，其对应的回调函数hook handler可以作为单个容器可选定义项的一部分。这个容器钩子与操作系统传统进程模型的通知回调机制有些类似。其实，还有一个与容器环境相关的重要部分是容器可用的文件系统。通过前面的讨论可知，在Kubernetes中，容器的文件系统由一个容器镜像和若干个Volume组成。
+　　下面我们将着重讨论暴露给容器的集群信息和用于向容器发布对其生命周期管理信息的容器钩子这两种同容器上下文环境协作的方法。
+1、集群环境感知
+　　运行在Kubernetes集群中的一个容器在容器内部能够感知两种类型的环境变量信息，一种是与容器自身相关的信息，另一种是集群的信息。
+1.1容器自身信息
+　　容器能够感知到的与容器自身相关的信息包括运行该容器的pod的名字、pod所在的namespace、在pod资源配置文件中env字段定义的键/值对，等等。其中，pod的名字被设置成容器的的主机名，而且可以在容器内通过所有访问主机名的方式获得，例如，hostname命令或JAVA中InetAddress.getLocalHost()函数调用。pod的名字和namespace还可以通过downwardAPI进行访问。对容器而言，用户在pod资源配置文件中自定义的环境变量的可访问性与在Docker镜像中指定的环境变量是一样的。downwardAPI示例如下：
+
+[root@k8s-master downwardapi]# cat test-downwardapi.yaml 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-downwardaoi-volume
+  labels:
+    name: test-downwardaoi-volume
+    zone: us-east
+    cluster: test-cluster1
+  annotations:
+    build: two
+    builder: zhenyuyaodidiao
+spec:
+  containers:
+    - name: test-hostpath
+      image: registry:5000/back_demon:1.0
+      volumeMounts:
+       - name: podinfo
+         mountPath: /home/laizy/podinfo
+         readOnly: false
+      command:
+      - /run.sh
+  volumes:
+  - name: podinfo
+    downwardAPI:
+      items:
+       - path: "pod_name"
+         fieldRef:
+           fieldPath: metadata.name
+       - path: "pod_namespace"
+         fieldRef:
+           fieldPath: metadata.namespace
+       - path: "pod_labels"
+         fieldRef:
+           fieldPath: metadata.labels
+       - path: "pod_annotations"
+         fieldRef:
+           fieldPath: metadata.annotations
+
+[root@k8s-master downwardapi]# kubectl create -f test-downwardapi.yaml 
+pod "test-downwardaoi-volume" created
+
+[root@k8s-master downwardapi]# kubectl exec -ti test-downwardaoi-volume /bin/bash
+[root@test-downwardaoi-volume /]# cd /home/laizy/podinfo/
+[root@test-downwardaoi-volume podinfo]# ls
+pod_annotations  pod_labels  pod_name  pod_namespace
+[root@test-downwardaoi-volume podinfo]# cat pod_annotations 
+build="two"
+builder="zhenyuyaodidiao"
+kubernetes.io/config.seen="2017-03-22T09:42:11.832955302+08:00"
+kubernetes.io/config.source="api"
+[root@test-downwardaoi-volume podinfo]# cat pod_labels 
+cluster="test-cluster1"
+name="test-downwardaoi-volume"
+zone="us-east"
+[root@test-downwardaoi-volume podinfo]# cat pod_name
+test-downwardaoi-volume
+[root@test-downwardaoi-volume podinfo]# cat pod_name
+test-downwardaoi-volume
+[root@test-downwardaoi-volume podinfo]# cat pod_namespace 
+default
+[root@test-downwardaoi-volume podinfo]# exit
+exit
+
+?
+1.2集群信息
+　　我们在前面已经讨论过Kubernetes服务发现的两种机制：DNS和环境变量。service环境变量属于集群信息，在容器创建时由Kubemetes集群API注人，在容器内以环境变量或域名的方式被访问。
+2．容器钩子
+　　容器钩子是Kubemetes针对容器生命周期管理引入的事件处理机制，它负责监听Kubemetes对容器生命周期的管理信息，并将这些信息以广播的形式通知给容器。然后执行相应的回调函数。
+2.1容器钩子类型
+　　Kubemetes支持两种类型的容器钩子，分别为PostStart和PreStop。
+　　PostStart。该钩子在容器被创建后立刻触发，通知容器它已经被创建。该钩子不需要向其所对应的hook handler传人任何参数。如果该钩子对应的hook handler执行失败，则该容器会被杀死，并根据该容器的重启策略决定是否要重启该容器。
+　　PreStop。该钩子在容器被删除前触发，其所对应的hook handler必须在删除该容器的请求发送给Docker daemon之前完成。在该钩子对应的hook handler完成后不论执行的结果如何，Docker daemon会发送一个SGTERN信号量给Docker daemon来删除该容器。同样地。该钩子也不需要传人任何参数
+2.2hook handler执行
+　　当一个容器管理hook发生时，管理系统将会在容器中调用注册的hook handler。其中hook handler通过在包含该容器的pod资源配置文件的Lifecycle字段中定义来完成注册。注意，当hook handler在执行时，其他对该容器所在pod的管理动作将被阻塞除非该容器异常退出。而如果你自定义的hook handler阻塞时，其他对pod的管理操作包括容器健康检查将不会发生，直到hook handler继续执行完毕。因此，一般建议用户自定义的hook handler代码尽可能地轻量化，尽管确实有一些场景的hook handler需要长时间运行（例如在容器时退出保存运行状态等）。
+2.3hook handler的执行方式
+　　hook handler是hook在容器内执行的回调函数，也即hook暴露给容器的方式。Kubemetes支持两种不同的hook handler类型，分别是Exec和HTTPGet。
+　　　　Exec。在容器的cgroup和namespace内启动一个新进程来执行指定的命令，由该命令消耗的资源全部要计人容器的消耗。正如在之前容器健康检查中提到的，如果Exec执行的命令最后在标准输出stdout的结果为0k，就代表handler执行成功，否则就被认为执行异常，并且Kuberlet将强制重新启动该容器。
+　　　　HTTPGet。向容器的指定接口发起一个HTTP请求作为handler的具体执行内容，并通过返回的HTTP状态码来判断该请求执行是否成功。
+　　综上，hook机制为用户提供了一种能够根据容器生命周期及其上下文的变化来触发不同操作的协作方法。这对于很多需要精细控制容器的场景是非常有用的，比如在容器结束前执行一些清理工作来保证其“优雅”退出。以下给出hook执行exec的示例：
+
+[root@k8s-master hook]# cat test-lifecycle-hostpath.yaml 
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    name: test-lifecycle-hostpath
+    role: master
+  name: test-lifecycle-hostpath
+spec:
+  containers:
+    - name: test-lifecycle-hostpath
+      image: registry:5000/back_demon:1.0
+      lifecycle:
+        postStart:
+          exec:
+            command:
+              - "touch"
+              - "/home/laizy/test/hostpath/post-start"
+        preStop:
+          exec:
+            command:
+              - "touch"
+              - "/home/laizy/test/hostpath/pre-stop"
+      volumeMounts:
+       - name: testhost
+         mountPath: /home/laizy/test/hostpath
+         readOnly: false
+      command:
+      - /run.sh
+  volumes:
+  - name: testhost
+    hostPath:
+     path: /home/testhost
+[root@k8s-master hook]# date
+2017年 03月 22日 星期三 10:21:58 CST
+[root@k8s-master hook]# kubectl create -f test-lifecycle-hostpath.yaml 
+pod "test-lifecycle-hostpath" created
+[root@k8s-master hook]# kubectl get pod -o wide
+NAME                                READY     STATUS    RESTARTS   AGE       IP          NODE
+test-lifecycle-hostpath             1/1       Running   0          13s       10.0.9.3    k8s-node-3
+[root@k8s-master hook]# date
+2017年 03月 22日 星期三 10:22:52 CST
+[root@k8s-master hook]# kubectl delete pod test-lifecycle-hostpath 
+pod "test-lifecycle-hostpath" deleted
+
+在node3上查看外挂出来的路径上，生成了两个文件，post-start文件是在pod创建之后生成的；pre-stop文件是在pod删除之前生成的。
+[root@k8s-node-3 ~]# ll /home/testhost/
+总用量 0
+-rw-r--r--. 1 root root 0 3月  22 10:22 post-start
+-rw-r--r--. 1 root root 0 3月  22 10:23 pre-stop
+[root@k8s-node-3 ~]# 
+?
+对应的httpGet示例简单示意如下：
+
+containers:
+  - name: lifecycle
+    image: busybox
+    lifecycle:
+      postStart:
+        exec:
+          command:
+            - "touch"
+            - "/var/log/lifecycle/post-start"
+      preStop:
+        httpGet:
+          path: "/abort"
+          port: 8080

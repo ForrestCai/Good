@@ -1,0 +1,54 @@
+When you create a Pod, you can set environment variables for the containers that run in the Pod. To set environment variables, include the env field in the configuration file. 
+在创建pod时，你可以为运行在pod中的容器设置环境变量。当我们需要设置变量时，我们只需要在配置文件中（yaml）中加入env选项。
+In this exercise, you create a Pod that runs one container. The configuration file for the Pod defines an environment variable with name DEMO_GREETING and value “Hello from the environment”. Here is the configuration file for the Pod: 
+在这个练习中，你将创建一个运行了一个容器的pod。在配置文件中为pod定义的的一个环境变量名为 DEMO_GREETING，值为 “Hello from the environment”。这个pod的配置文件envars.yaml如下：
+apiVersion: v1
+kind: Pod
+metadata:
+  name: envar-demo
+  labels:
+    purpose: demonstrate-envars
+spec:
+  containers:
+  - name: envar-demo-container
+    image: gcr.io/google-samples/node-hello:1.0
+    env:
+    - name: DEMO_GREETING
+      value: "Hello from the environment"
+
+Create a Pod based on the YAML configuration file: 
+通过YAML配置文件创建Pod:
+kubectl create -f http://k8s.io/docs/tasks/configure-pod-container/envars.yaml
+1
+List the running Pods: 
+查看正在运行的Pods
+kubectl get pods -l purpose=demonstrate-envars
+1
+The output is similar to this: 
+输出内容如下：
+     NAME            READY     STATUS    RESTARTS   AGE
+     envar-demo      1/1       Running   0          9s
+1
+2
+Get a shell to the container running in your Pod: 
+连接到Pod中的容器：
+kubectl exec -it envar-demo -- /bin/bash
+1
+In your shell, run the printenv command to list the environment variables. 
+在这个shell中，执行命令printenv命令查看环境变量。
+root@envar-demo:/# printenv
+1
+The output is similar to this: 
+输出内容如下:
+     NODE_VERSION=4.4.2
+     EXAMPLE_SERVICE_PORT_8080_TCP_ADDR=10.3.245.237
+     HOSTNAME=envar-demo
+     ...
+     DEMO_GREETING=Hello from the environment
+1
+2
+3
+4
+5
+To exit the shell, enter exit. 
+执行命令exit退出。

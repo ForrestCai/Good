@@ -1,0 +1,1 @@
+cluster/addons/dns目录下找到两个模板（skydns-rc.yaml.in和skydns-svc.yaml.in）来创建
