@@ -18,3 +18,11 @@ vi /etc/sysconfig/docker
 
 curl -XGET 192.168.0.128:5000/v2/_catalog
 
+
+
+docker tag docker.io/redis:4.0 192.168.0.128:5000/redis:4.0
+docker push 192.168.0.128:5000/redis:4.0
+
+
+docker save 192.168.0.128:5000/myrabbitmq:latest > /rabbitmq.tar
+docker load < /rabbitmq.tar
