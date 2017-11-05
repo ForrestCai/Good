@@ -1,0 +1,56 @@
+args:
+           
+	- --kubeconfig=/root/.kube/config
+
+
+
+在kube-apiserver等核心组件还是以本地程序运行在物理机上的时代，修改kube-apiserver的启动参数，比如修改一下–service-node-port-range的范围、添加一个–basic-auth-file等，我们都可以通过直接修改/etc/default/kube-apiserver(以Ubuntu 14.04为例)文件的内容并重启kube-apiserver service(service restart kube-apiserver)的方式实现。其他核心组件：诸如：kube-controller-manager、kube-proxy和kube-scheduler均是如此。
+但在kubeadm时代，这些配置文件不再存在，取而代之的是和用户Pod描述文件类似的manifest文件(都放置在/etc/kubernetes/manifests下面)：
+
+
+kube-up.sh安装的k8s集群会在每个Node上的~/.kube/下创建config文件，用于kubectl访问apiserver和操作集群使用。但在kubeadm模式下，~/.kube/下面的内容变成了：
+~/.kube# ls
+cache/  schema/
+于是有了问题1：config哪里去了？
+之所以在master node上我们的kubectl依旧可以工作，那是因为默认kubectl会访问localhost:8080来与kube-apiserver交互。如果kube-apiserver没有关闭–insecure-port，那么kubectl便可以正常与kube-apiserver交互，因为–insecure-port是没有任何校验机制的。
+于是又了问题2：如果是其他node上的kubectl与kube-apiserver通信或者master node上的kubectl通过secure port与kube-apiserver通信，应该如何配置？
+接下来，我们一并来回答上面两个问题。kubeadm在创建集群时，在master node的/etc/kubernetes下面创建了两个文件：
+/etc/kubernetes# ls -l
+total 32
+-rw------- 1 root root 9188 Dec 28 17:32 admin.conf
+-rw------- 1 root root 9188 Dec 28 17:32 kubelet.conf
+... ...
+这两个文件的内容是完全一样的，仅从文件名可以看出是谁在使用。比如kubelet.conf这个文件，我们就在kubelet程序的启动参数中看到过：–kubeconfig=/etc/kubernetes/kubelet.conf
+# ps -ef|grep kubelet
+root      1633     1  5  2016 ?        1-09:26:41 /usr/bin/kubelet --kubeconfig=/etc/kubernetes/kubelet.conf --require-kubeconfig=true --pod-manifest-path=/etc/kubernetes/manifests --allow-privileged=true --network-plugin=cni --cni-conf-dir=/etc/cni/net.d --cni-bin-dir=/opt/cni/bin --cluster-dns=10.96.0.10 --cluster-domain=cluster.local
+
+打开这个文件，你会发现这就是一个kubeconfig文件，文件内容较长，我们通过kubectl config view来查看一下这个文件的结构：
+# kubectl --kubeconfig /etc/kubernetes/kubelet.conf config view
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: REDACTED
+    server: https://{master node local ip}:6443
+  name: kubernetes
+contexts:
+- context:
+    cluster: kubernetes
+    user: admin
+  name: admin@kubernetes
+- context:
+    cluster: kubernetes
+    user: kubelet
+  name: kubelet@kubernetes
+current-context: admin@kubernetes
+kind: Config
+preferences: {}
+users:
+- name: admin
+  user:
+    client-certificate-data: REDACTED
+    client-key-data: REDACTED
+- name: kubelet
+  user:
+    client-certificate-data: REDACTED
+    client-key-data: REDACTED
+这和我们在《Kubernetes集群Dashboard插件安装》一文中介绍的kubeconfig文件内容并不二致。不同之处就是“REDACTED”这个字样的值，我们对应到kubelet.conf中，发现每个REDACTED字样对应的都是一段数据，这段数据是由对应的数字证书内容或密钥内容转换(base64)而来的，在访问apiserver时会用到。
