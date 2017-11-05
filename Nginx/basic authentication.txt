@@ -1,0 +1,11 @@
+yum -y install httpd
+
+htpasswd -c /usr/local/nginx/conf/htpasswd.txt yhc
+
+
+
+        location /kube/ {
+            auth_basic "please input password:";
+            auth_basic_user_file /usr/local/nginx/conf/htpasswd.txt;
+            proxy_pass http://192.168.0.129:32042/;
+        }
