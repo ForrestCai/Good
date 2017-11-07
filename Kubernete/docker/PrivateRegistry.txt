@@ -8,10 +8,10 @@ client:
 
 vi /etc/sysconfig/docker
 
- vi /usr/lib/systemd/system/docker.service
+vi /usr/lib/systemd/system/docker.service
 
 
- systemctl daemon-reload
+systemctl daemon-reload
 
 
 

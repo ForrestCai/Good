@@ -25,25 +25,16 @@ spec:
           requests:
             cpu: 100m
             memory: 50Mi
-        volumeMounts:
-          - mountPath: /etc/kubernetes
-            name: config
         ports:
         - containerPort: 9090
         args:
-         #- --apiserver-host=http://192.168.0.128:8080
-         - --kubeconfig=/etc/kubernetes/kubelet.conf
+         - --apiserver-host=http://192.168.0.128:8080
         livenessProbe:
           httpGet:
             path: /
             port: 9090
           initialDelaySeconds: 30
           timeoutSeconds: 30
-      volumes:
-      - name: config
-        hostPath:
-          path: /etc/kubernetes
-      
 
 ---
 kind: Service
@@ -58,6 +49,5 @@ spec:
   ports:
   - port: 80
     targetPort: 9090
-    nodePort: 30500
   selector:
     k8s-app: kubernetes-dashboard
