@@ -21,9 +21,10 @@ metadata:
   name: testservice3
 spec: 
   ports: 
-    - port: 30003
+    - port: 5000
       targetPort: 5000 
       protocol: TCP 
+      nodePort: 30003
   type: NodePort
   selector: 
     app: testservice3

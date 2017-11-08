@@ -21,7 +21,7 @@ metadata:
   name: testservice1
 spec: 
   ports: 
-    - port: 5001
+    - port: 5000
       targetPort: 5000 
       protocol: TCP 
       nodePort: 30001
