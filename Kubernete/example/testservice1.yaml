@@ -27,4 +27,4 @@ spec:
       nodePort: 30001
   type: NodePort
   selector: 
-    name: testservice1            
+    app: testservice1            

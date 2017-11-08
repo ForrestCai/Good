@@ -26,4 +26,4 @@ spec:
       protocol: TCP 
   type: NodePort
   selector: 
-    name: testservice3
+    app: testservice3
