@@ -1,0 +1,257 @@
+　在kubernetes1.2的时候，采用了skydns + kube2dns +etcd的方式来部署dns。而从1.3开始，则部署方式有了一点儿变化，将skydns和kube2dns封装到了一个容器镜像中，放弃了etcd，而将dns解析直接放入到了内存之中，同时引入了dnsmasq，进一步利用其缓存，具体的原理，请查阅相关文档。本篇文档，主要阐述新版的dns在kubernetes中的具体部署。
+　　在Kubernetes的源码目录中，有个cluster/addons/dns目录，下面有几个与dns相关的文件，我们将其中的skydns-rc.yaml.sed以及skydns-svc.yaml.sed文件下载到本地，并去掉后缀。只是拷贝文件的话，可以通过https://rawgit.com这个地址加速，如下：
+wget https://rawgit.com/kubernetes/kubernetes/release-1.5/cluster/addons/dns/skydns-rc.yaml.sed -O skydns-rc.yaml
+wget https://rawgit.com/kubernetes/kubernetes/release-1.5/cluster/addons/dns/skydns-svc.yaml.sed -O skydns-svc.yaml
+下载下来的原文件是用于saltstack自动化安装的，我们手动处理的时候，需要进行相关修改。
+修改skydns-rc.yaml内容如下：
+
+# Copyright 2016 The Kubernetes Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# TODO - At some point, we need to rename all skydns-*.yaml.* files to kubedns-*.yaml.*
+# Should keep target in cluster/addons/dns-horizontal-autoscaler/dns-horizontal-autoscaler.yaml
+# in sync with this file.
+
+# __MACHINE_GENERATED_WARNING__
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: kube-dns
+  namespace: kube-system
+  labels:
+    k8s-app: kube-dns
+    kubernetes.io/cluster-service: "true"
+spec:
+　#指定副本数
+  replicas: 1
+  # replicas: not specified here:
+  # 1. In order to make Addon Manager do not reconcile this replicas parameter.
+  # 2. Default is 1.
+  # 3. Will be tuned in real time if DNS horizontal auto-scaling is turned on.
+  strategy:
+    rollingUpdate:
+      maxSurge: 10%
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      k8s-app: kube-dns
+  template:
+    metadata:
+      labels:
+        k8s-app: kube-dns
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+        scheduler.alpha.kubernetes.io/tolerations: '[{"key":"CriticalAddonsOnly", "operator":"Exists"}]'
+    spec:
+      containers:
+      - name: kubedns
+　　　　　#修改image地址，默认是google的仓库地址，如果不担心被墙，可以直接使用，我这里使用的私有仓库地址，如果要使用国内其他仓库地址，推荐使用阿里云镜像库
+        image: myhub.fdccloud.com/library/kubedns-amd64:1.9
+        resources:
+          # TODO: Set memory limits when we've profiled the container for large
+          # clusters, then set request = limit to keep this container in
+          # guaranteed class. Currently, this container falls into the
+          # "burstable" category so the kubelet doesn't backoff from restarting it.
+          limits:
+            memory: 170Mi
+          requests:
+            cpu: 100m
+            memory: 70Mi
+        livenessProbe:
+          httpGet:
+            path: /healthz-kubedns
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 60
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /readiness
+            port: 8081
+            scheme: HTTP
+          # we poll on pod startup for the Kubernetes master service and
+          # only setup the /readiness HTTP server once that's available.
+          initialDelaySeconds: 3
+          timeoutSeconds: 5
+        args:
+　　　　 # --domain指定一级域名，可自定义
+        - --domain=cluster.local.
+        - --dns-port=10053
+        - --config-map=kube-dns
+　　　　 #增加--kube-master-url，指向kube master的地址
+        - --kube-master-url=http://10.5.10.116:8080
+        # This should be set to v=2 only after the new image (cut from 1.5) has
+        # been released, otherwise we will flood the logs.
+        - --v=0
+        #__PILLAR__FEDERATIONS__DOMAIN__MAP__
+        env:
+        - name: PROMETHEUS_PORT
+          value: "10055"
+        ports:
+        - containerPort: 10053
+          name: dns-local
+          protocol: UDP
+        - containerPort: 10053
+          name: dns-tcp-local
+          protocol: TCP
+        - containerPort: 10055
+          name: metrics
+          protocol: TCP
+      - name: dnsmasq
+        image: myhub.fdccloud.com/library/kube-dnsmasq-amd64:1.4
+        livenessProbe:
+          httpGet:
+            path: /healthz-dnsmasq
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 60
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 5
+        args:
+        - --cache-size=1000
+        - --no-resolv
+        - --server=127.0.0.1#10053
+        #- --log-facility=-　　#注释掉该行
+        ports:
+        - containerPort: 53
+          name: dns
+          protocol: UDP
+        - containerPort: 53
+          name: dns-tcp
+          protocol: TCP
+        # see: https://github.com/kubernetes/kubernetes/issues/29055 for details
+        resources:
+          requests:
+            cpu: 150m
+            memory: 10Mi
+      - name: dnsmasq-metrics
+        image: myhub.fdccloud.com/library/dnsmasq-metrics-amd64:1.0
+        livenessProbe:
+          httpGet:
+            path: /metrics
+            port: 10054
+            scheme: HTTP
+          initialDelaySeconds: 60
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 5
+        args:
+        - --v=2
+        - --logtostderr
+        ports:
+        - containerPort: 10054
+          name: metrics
+          protocol: TCP
+        resources:
+          requests:
+            memory: 10Mi
+      - name: healthz
+        image: myhub.fdccloud.com/library/exechealthz-amd64:1.2
+        resources:
+          limits:
+            memory: 50Mi
+          requests:
+            cpu: 10m
+            # Note that this container shouldn't really need 50Mi of memory. The
+            # limits are set higher than expected pending investigation on #29688.
+            # The extra memory was stolen from the kubedns container to keep the
+            # net memory requested by the pod constant.
+            memory: 50Mi
+        args:
+        - --cmd=nslookup kubernetes.default.svc.cluster.local 127.0.0.1 >/dev/null
+        - --url=/healthz-dnsmasq
+        - --cmd=nslookup kubernetes.default.svc.cluster.local 127.0.0.1:10053 >/dev/null
+        - --url=/healthz-kubedns
+        - --port=8080
+        - --quiet
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+      dnsPolicy: Default  # Don't use cluster DNS.
+
+修改skydns-svc.yaml内容如下：
+
+# Copyright 2016 The Kubernetes Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# TODO - At some point, we need to rename all skydns-*.yaml.* files to kubedns-*.yaml.*
+
+# __MACHINE_GENERATED_WARNING__
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-dns
+  namespace: kube-system
+  labels:
+    k8s-app: kube-dns
+    kubernetes.io/cluster-service: "true"
+    kubernetes.io/name: "KubeDNS"
+spec:
+  selector:
+    k8s-app: kube-dns
+  #指定clusterIP，后面各pod的dns地址都会指向该地址
+  clusterIP: 10.254.0.100
+  ports:
+  - name: dns
+    port: 53
+    protocol: UDP
+  - name: dns-tcp
+    port: 53
+    protocol: TCP
+
+启动dns：
+kubectl create -f skydns-rc.yaml
+kubectl create -f skydns-svc.yaml
+修改各node节点上的/etc/kubernetes/kubelet配置文件，增加如下行：
+KUBELET_ARGS="--cluster_dns=10.254.0.100 --cluster_domain=cluster.local"
+重启各节点：
+systemctl restart kubelet
+添加一个busybox的pod用于测试，busybox.yaml内容如下：
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    name: busybox
+    role: master
+  name: busybox
+spec:
+  containers:
+  - name: busybox
+    image: myhub.fdccloud.com/library/busybox
+    command:
+    - sleep
+    - "3600"
+
+执行如下操作：
+kubectl exec -it busybox sh
+nslookup kubernetes
+nslookup kubernetes.default.cluster.local
+nslookup kubernetes.default.svc.cluster.local

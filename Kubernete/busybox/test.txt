@@ -1,0 +1,5 @@
+kubectl exec busybox -- nslookup redis-master
+
+kubectl exec -ti busybox /bin/bash
+
+kubectl exec -it busybox sh
