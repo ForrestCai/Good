@@ -1,0 +1,22 @@
+Kubernetes里的Pod不是一个“长生”的家伙，它会由于各种原因被销毁和创造。比如在垂直扩容和滚动更新过程中，旧的Pod会被销毁，被新的Pod代替。这期间，Pod的IP地址甚至会发生变化。所以Kubernetes引进了Service.Service是一个抽象的实体，Kubernetes在创建Service实体时，为其分配了一个虚拟的IP，当我们需要访问Pod里的容器提供的功能时，我们不直接使用Pod的IP地址和端口，而是访问Service的这个虚拟IP和端口，由Service把请求转发给它背后的Pod.
+Kubernetes在创建Service时，根据Service的标签选择器（Label Selector）来查找Pod，据此创建与Service同名的EndPoints对象。当Pod的地址发生变化时，EndPoints也随之变化。Service接受到请求时，就能通过EndPoints找到请求转发的目标地址。
+
+kubectl describe endpoints/kubernetes-dashboard --namespace=kube-system
+
+
+Service的targetPort和Pod的IP地址都记录在了与Service同名的EndPoints里
+
+userspace模式和iptables模式。在Kubernetes v1.1版本之前默认是userspace模式，v1.2版本后默认是iptables模式。
+userspace模式：当创建Service时，所有Node节点上的kube-proxy都会在其所在的本地节点上随机开放一个端口（称为代理端口），然后建立一个iptables规则（一种linux包处理逻辑）,iptables会完成<服务的虚拟IP, 端口>与代理端口的流量转发，再从EndPoints里选择一个Pod,把代理端口的流量转给该Pod. 当EndPoints下有多个Pod时，选择Pod的算法有两种：1 依次循环，如果一个Pod没有响应，就试下一个(service.spec.sessionAffinity值为"None")；2 选择与请求来源IP更接近的Pod(service.spec.sessionAffinity值为"ClientIP").
+
+iptables模式：当创建Service时，所有Node节点上的kube-proxy都会建立两级iptables规则，一级为Service创建，目的是将<服务虚拟IP，端口>的流量转给后端，另一级为EndPoints创建，目的是用于选择Pod. 当service.spec.sessionAffinity值为"ClientIP"时，iptables模式选择Pod的算法和userspace模式相同。当service.spec.sessionAffinity值为"None"时，随机选择Pod，所以如果被选择的Pod没有响应，不会尝试选择另一个Pod.
+
+
+iptables模式相比userspace模式更快更稳定，也不存在请求的source IP的问题。
+
+
+iptables -vL --line-numbers -t nat
+
+iptables -S -t nat|grep mysql-service
+
+iptables -L -n -v

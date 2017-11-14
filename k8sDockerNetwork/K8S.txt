@@ -1,0 +1,5 @@
+Kubernetes在创建Pod时，先在Node节点的Docker上创建了一个运行在bridge网络的“pod容器”，为这个pod容器创建虚拟网卡eth0并分配IP地址。而Pod里的容器（称为app容器），在创建时使用--net=container:来共享pod容器的网络空间。
+
+
+这个flannel0是Kubelet用flannel创建出来的bridge,并在Docker进程启动时，作为了--bridge参数值：--bridge=flannel0，这样使得Docker里创建的容器默认都使用flannel0网段里的IP地址。
+

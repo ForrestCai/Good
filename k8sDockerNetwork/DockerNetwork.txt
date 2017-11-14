@@ -1,0 +1,52 @@
+docker network ls
+
+docker run --net=host -itd --name=container busybox
+
+docker network inspect bridge
+
+docker network inspect none
+
+docker network inspect host
+
+Docker还可以将容器运行在另一个容器的网络上，例如，上面的容器container1运行在bridge网络，现在再创建一个容器container7，用--net=container:container1来指定容器container7与container1共享一个网卡eth0
+
+
+除了Docker自动创建的三个网络，用户可以为Docker创建新的网络。为Docker增加新的网络的方式有两种——使用Docker自带的bridge和overlay两种网络驱动，或提供新的网络插件。
+用户可以创建多个网络，并且将容器运行在多个网络上。容器之间的通信只能在同一个网络里进行，容器之间不能跨网络通信。
+
+使用docker network create命令创建一个新的bridge网络
+$ docker network create --driver bridge my_network
+
+此时，使用docker network list命令可以看到多出了一个叫my_network的网络
+
+my_network网络的使用方式和1.1 Docker的bridge网络里介绍的bridge网络的使用方式完全相同
+
+使用docker network connect命令可以将已经运行容器加入到另一个网络，如将container2加入到my_network网络：
+
+$ docker network connect my_network container2
+$ docker network inspect my_network
+
+
+bridge模式下的网络适用于在单台主机上运行几个较小的相互隔离的网络。如果要创建跨主机的网络，可以使用overlay模式。
+
+本文只对Docker的overlay网络模式作简要介绍，其详细说明创建方法可参考Getting started for overlay.
+Docker内置overlay网路模式驱动libnetwork，可以用于创建跨多个主机的网络。在同一个overlay网络里的容器，无论运行在哪个主机上，都能相互通信。
+要创建overlay网络，首先要有一个提供key-value存储服务的服务器，当前Docker支持的key-value存储服务器有Consul, Etcd和ZooKeeper. 组成overlay网络的Docker的主机之间、Docker主机和key-value存储服务器之间都要能互通互联。在Docker主机上还要开放如下两个端口：
+
+udp端口：4789，用于传输VXLAN网络数据的端口
+tcp/udp端口：7946，用于控制平面的端口
+
+对要加入overlay网络里里的每台Docker主机，都要完成如下配置：/span>
+
+--cluster-store=PROVIDER://URL/span> 配置key-value存储服务器的地址
+--cluster-advertise=HOST_IP|HOST_IFACE:PORT Docker所在的当前主机的地址和端口
+--cluster-store-opt=KEY-VALUE OPTIONS 其他配置信息，如TLS证书等
+然后用docker network create命令就能创建一个overlay网络,并能在该网络上创建容器。
+$ docker network create --driver overlay my-multi-host-network
+$ docker run -itd --net=my-multi-host-network busybox
+
+
+ 定制Docker网络插件
+使用Docker的插件机制，用户也能通过开发网络插件来提供定制的Docker网络驱动。使用定制的网络插件来创建Docker网络的方法与上面所述的相同，一样是使用docker network create命令。例如，weave是用户提供的定制的网络驱动：
+$ docker network create --driver weave mynet
+$ docker run -itd --net=mynet busybox
