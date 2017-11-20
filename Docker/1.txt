@@ -1,0 +1,6 @@
+Docker的基本知识，这里就不一一赘述。
+Docker架构中，image和container都是这里面真正的应用内容。image的创建，一类就是由Dockerfile build出来的，还有用docker commit。
+如果基础不足的，可以选择docker search，在Docker的官网镜像库查找你想要的image，然后使用docker pull，把镜像下载下来。
+有了你想要的镜像，这时候，就该想想，这个镜像我怎么用，zabbix的做监控，mysql的做数据库，wordpress的做站点，当你明白自己下载的是什么镜像时，就要联想到很多东西，映射端口、密码、link到什么container，等等。
+
+通过docker images -a，列出当前服务端的docker image，我选择kevan/dockerui这个image来跑一个Docker的可视化管理界面。

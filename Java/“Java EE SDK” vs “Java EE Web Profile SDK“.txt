@@ -1,0 +1,1 @@
+web profile版本与platform sdk之间的区别在于，web profile版本仅提供Java EE平台的一个子集。它专为仅应用于大多数Web应用程序所需的技术的Web应用程序开发而设计，并且不包括那些 通常不需要Web应用程序（像JMS等）。而platform sdk则全面一些。

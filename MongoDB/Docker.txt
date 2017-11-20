@@ -1,0 +1,15 @@
+docker pull mongo:3.2
+
+docker run -p 27017:27017 -v /root/mongodb:/data/db -d --privileged  mongo:3.2
+
+
+docker run -ti --rm --entrypoint="/bin/bash" mongo:3.2  -c "whoami && id"
+
+
+chown -R 1000 db
+
+chmod 777 db
+
+
+docker run -it mongo:3.2 mongo --host localhost
+
