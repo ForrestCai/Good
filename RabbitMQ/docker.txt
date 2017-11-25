@@ -1,0 +1,7 @@
+﻿在windows7上安装了rabbitmq server， 安装过程略。  下面要开启管理界面：
+1、在cmd窗口下进入rabbitmq安装目录下的sbin目录，使用rabbitmq-plugins.bat list查看已安装的插件列表。
+2、使用rabbitmq-plugins.bat enable rabbitmq_management开启网页管理界面
+
+
+
+docker run -p 5673:5672 -p 15673:15672 -v /root/rabbitmq:/var/lib/rabbitmq -d --hostname my-rabbit --name rabbitmq  --privileged --restart=always docker.io/rabbitmq:3-management
