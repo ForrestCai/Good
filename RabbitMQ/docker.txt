@@ -5,3 +5,6 @@
 
 
 docker run -p 5673:5672 -p 15673:15672 -v /root/rabbitmq:/var/lib/rabbitmq -d --hostname my-rabbit --name rabbitmq  --privileged --restart=always docker.io/rabbitmq:3-management
+
+
+docker volume ls
