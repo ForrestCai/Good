@@ -14,6 +14,8 @@ namespace Subscriber
             var connection = factory.CreateConnection();
             var channel = connection.CreateModel();
 
+            channel.ExchangeDeclare("TestExchange", "fanout", true, false);
+
             var queue = channel.QueueDeclare(queue: "Test",
                                  durable: true,
                                  exclusive: false,
@@ -22,18 +24,18 @@ namespace Subscriber
 
             channel.BasicQos(prefetchSize: 0, prefetchCount: 3, global: false);
 
-            //channel.QueueBind(queue: queue.QueueName,
-            //                  exchange: "",
-            //                  routingKey: "");                              );
+            channel.QueueBind(queue: queue.QueueName,
+                              exchange: "TestExchange",
+                              routingKey: "");
 
             var consumer = new EventingBasicConsumer(channel);
             consumer.Received += (model, ea) =>
             {
                 var body = ea.Body;
                 var message = Encoding.UTF8.GetString(body);
-                Console.WriteLine("Received {0}", message);
+                Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} Received {message}");
                 Thread.Sleep(5000);
-                Console.WriteLine("Finished {0}", message);
+                Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} Finished {message}");
                 channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
             };
 

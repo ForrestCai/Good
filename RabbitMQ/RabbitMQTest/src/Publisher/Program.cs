@@ -37,7 +37,7 @@ namespace Publisher
                                              basicProperties: p,
                                              body: body);
 
-                        Console.WriteLine(" [x] Sent {0}", message);
+                        Console.WriteLine("Sent {0}", message);
 
                         input = Console.ReadLine();
                     }
