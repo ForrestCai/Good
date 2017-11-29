@@ -10,7 +10,7 @@ namespace Subscriber
     {
         public static void Main(string[] args)
         {
-            var factory = new ConnectionFactory() { HostName = "192.168.0.131", Port = 5673, UserName = "guest", Password = "guest", Protocol = Protocols.AMQP_0_9_1 };
+            var factory = new ConnectionFactory() { HostName = "192.168.0.131", Port = 5673, UserName = "guest", Password = "guest", Protocol = Protocols.AMQP_0_9_1, AutomaticRecoveryEnabled = true };
             var connection = factory.CreateConnection();
             var channel = connection.CreateModel();
 
