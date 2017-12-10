@@ -8,3 +8,8 @@ Bridge µÄ¹¦ÄÜÖ÷ÒªÔÚÄÚºËÀïÊµÏÖ¡£µ±Ò»¸ö´ÓÉè±¸±» attach µ½ Bridge ÉÏÊ±£¬Ïàµ±ÓÚÏÖÊµÊ
 Bridge ºÍÏÖÊµÊÀ½çÖÐµÄ¶þ²ã½»»»»úÓÐÒ»¸öÇø±ð£¬Í¼ÖÐ×ó²à»­³öÁËÕâÖÖÇé¿ö£ºÊý¾Ý±»Ö±½Ó·¢µ½ Bridge ÉÏ£¬¶ø²»ÊÇ´ÓÒ»¸ö¶Ë¿Ú½ÓÊÜ¡£ÕâÖÖÇé¿ö¿ÉÒÔ¿´×ö Bridge ×Ô¼ºÓÐÒ»¸ö MAC ¿ÉÒÔÖ÷¶¯·¢ËÍ±¨ÎÄ£¬»òÕßËµ Bridge ×Ô´øÁËÒ»¸öÒþ²Ø¶Ë¿ÚºÍ¼ÄÖ÷ Linux ÏµÍ³×Ô¶¯Á¬½Ó£¬Linux ÉÏµÄ³ÌÐò¿ÉÒÔÖ±½Ó´ÓÕâ¸ö¶Ë¿ÚÏò Bridge ÉÏµÄÆäËû¶Ë¿Ú·¢Êý¾Ý¡£ËùÒÔµ±Ò»¸ö Bridge ÓµÓÐÒ»¸öÍøÂçÉè±¸Ê±£¬Èç bridge0 ¼ÓÈëÁË eth0 Ê±£¬Êµ¼ÊÉÏ bridge0 ÓµÓÐÁ½¸öÓÐÐ§ MAC µØÖ·£¬Ò»¸öÊÇ bridge0 µÄ£¬Ò»¸öÊÇ eth0 µÄ£¬ËûÃÇÖ®¼ä¿ÉÒÔÍ¨Ñ¶¡£ÓÉ´Ë´øÀ´Ò»¸öÓÐÒâË¼µÄÊÂÇéÊÇ£¬Bridge ¿ÉÒÔÉèÖÃ IP µØÖ·¡£Í¨³£À´Ëµ IP µØÖ·ÊÇÈý²ãÐ­ÒéµÄÄÚÈÝ£¬²»Ó¦¸Ã³öÏÖÔÚ¶þ²ãÉè±¸ Bridge ÉÏ¡£µ«ÊÇ Linux Àï Bridge ÊÇÍ¨ÓÃÍøÂçÉè±¸³éÏóµÄÒ»ÖÖ£¬Ö»ÒªÊÇÍøÂçÉè±¸¾ÍÄÜ¹»Éè¶¨ IP µØÖ·¡£µ±Ò»¸ö bridge0 ÓµÓÐ IP ºó£¬Linux ±ã¿ÉÒÔÍ¨¹ýÂ·ÓÉ±í»òÕß IP ±í¹æÔòÔÚÈý²ã¶¨Î» bridge0£¬´ËÊ±Ïàµ±ÓÚ Linux ÓµÓÐÁËÁíÍâÒ»¸öÒþ²ØµÄÐéÄâÍø¿¨ºÍ Bridge µÄÒþ²Ø¶Ë¿ÚÏàÁ¬£¬Õâ¸öÍø¿¨¾ÍÊÇÃûÎª bridge0 µÄÍ¨ÓÃÍøÂçÉè±¸£¬IP ¿ÉÒÔ¿´³ÉÊÇÕâ¸öÍø¿¨µÄ¡£µ±ÓÐ·ûºÏ´Ë IP µÄÊý¾Ýµ½´ï bridge0 Ê±£¬ÄÚºËÐ­ÒéÕ»ÈÏÎªÊÕµ½ÁËÒ»°üÄ¿±êÎª±¾»úµÄÊý¾Ý£¬´ËÊ±Ó¦ÓÃ³ÌÐò¿ÉÒÔÍ¨¹ý Socket ½ÓÊÕµ½Ëü¡£Ò»¸ö¸üºÃµÄ¶Ô±ÈÀý×ÓÊÇÏÖÊµÊÀ½çÖÐµÄ´øÂ·ÓÉµÄ½»»»»úÉè±¸£¬ËüÒ²ÓµÓÐÒ»¸öÒþ²ØµÄ MAC µØÖ·£¬¹©Éè±¸ÖÐµÄÈý²ãÐ­Òé´¦Àí³ÌÐòºÍ¹ÜÀí³ÌÐòÊ¹ÓÃ¡£Éè±¸ÀïµÄÈý²ãÐ­Òé´¦Àí³ÌÐò£¬¶ÔÓ¦ÃûÎª bridge0 µÄÍ¨ÓÃÍøÂçÉè±¸µÄÈý²ãÐ­Òé´¦Àí³ÌÐò£¬¼´¼ÄÖ÷ Linux ÏµÍ³ÄÚºËÐ­ÒéÕ»³ÌÐò¡£Éè±¸ÀïµÄ¹ÜÀí³ÌÐò£¬¶ÔÓ¦ bridge0 ¼ÄÖ÷ Linux ÏµÍ³ÀïµÄÓ¦ÓÃ³ÌÐò¡£ 
 Bridge µÄÊµÏÖµ±Ç°ÓÐÒ»¸öÏÞÖÆ£ºµ±Ò»¸öÉè±¸±» attach µ½ Bridge ÉÏÊ±£¬ÄÇ¸öÉè±¸µÄ IP »á±äµÄÎÞÐ§£¬Linux ²»ÔÙÊ¹ÓÃÄÇ¸ö IP ÔÚÈý²ã½ÓÊÜÊý¾Ý¡£¾ÙÀýÈçÏÂ£ºÈç¹û eth0 ±¾À´µÄ IP ÊÇ 192.168.1.2£¬´ËÊ±Èç¹ûÊÕµ½Ò»¸öÄ¿±êµØÖ·ÊÇ 192.168.1.2 µÄÊý¾Ý£¬Linux µÄÓ¦ÓÃ³ÌÐòÄÜÍ¨¹ý Socket ²Ù×÷½ÓÊÜµ½Ëü¡£¶øµ± eth0 ±» attach µ½Ò»¸ö bridge0 Ê±£¬¾¡¹Ü eth0 µÄ IP »¹ÔÚ£¬µ«Ó¦ÓÃ³ÌÐòÊÇÎÞ·¨½ÓÊÜµ½ÉÏÊöÊý¾ÝµÄ¡£´ËÊ±Ó¦¸Ã°Ñ IP 192.168.1.2 ¸³Óè bridge0¡£ 
 ÁíÍâÐèÒª×¢ÒâµÄÊÇÊý¾ÝÁ÷µÄ·½Ïò¡£¶ÔÓÚÒ»¸ö±» attach µ½ Bridge ÉÏµÄÉè±¸À´Ëµ£¬Ö»ÓÐËüÊÕµ½Êý¾ÝÊ±£¬´Ë°üÊý¾Ý²Å»á±»×ª·¢µ½ Bridge ÉÏ£¬½ø¶øÍê³É²é±í¹ã²¥µÈºóÐø²Ù×÷¡£µ±ÇëÇóÊÇ·¢ËÍÀàÐÍÊ±£¬Êý¾ÝÊÇ²»»á±»×ª·¢µ½ Bridge ÉÏµÄ£¬Ëü»áÑ°ÕÒÏÂÒ»¸ö·¢ËÍ³ö¿Ú¡£ÓÃ»§ÔÚÅäÖÃÍøÂçÊ±¾­³£ºöÂÔÕâÒ»µã´Ó¶øÔì³ÉÍøÂç¹ÊÕÏ¡£
+
+
+¸ÅÀ¨À´Ëµ£¬ÍøÇÅÊµÏÖ×îÖØÒªµÄÁ½µã£º
+1£®?MACÑ§Ï°£ºÑ§Ï°MACµØÖ·£¬Æð³õ£¬ÍøÇÅÊÇÃ»ÓÐÈÎºÎµØÖ·Óë¶Ë¿ÚµÄ¶ÔÓ¦¹ØÏµµÄ£¬Ëü·¢ËÍÊý¾Ý£¬»¹ÊÇµÃÏëHUBÒ»Ñù£¬µ«ÊÇÃ¿·¢ËÍÒ»¸öÊý¾Ý£¬Ëü¶¼»á¹ØÐÄÊý¾Ý°üµÄÀ´Ô´MACÊÇ´Ó×Ô¼ºµÄÄÄ¸ö¶Ë¿ÚÀ´µÄ£¬ÓÉÓÚÑ§Ï°£¬½¨Á¢µØÖ·-¶Ë¿ÚµÄ¶ÔÕÕ±í£¨CAM±í£©¡£
+2£®?±¨ÎÄ×ª·¢£ºÃ¿·¢ËÍÒ»¸öÊý¾Ý°ü£¬ÍøÇÅ¶¼»áÌáÈ¡ÆäÄ¿µÄMACµØÖ·£¬´Ó×Ô¼ºµÄµØÖ·-¶Ë¿Ú¶ÔÕÕ±í(CAM±í)ÖÐ²éÕÒÓÉÄÄ¸ö¶Ë¿Ú°ÑÊý¾Ý°ü·¢ËÍ³öÈ¥¡£

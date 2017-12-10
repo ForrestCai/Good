@@ -1,0 +1,20 @@
+﻿(1).何时需要使用-classpath：当你要编译或执行的类引用了其它的类，但被引用类的.class文件不在当前目录下时，就需要通过-classpath来引入类
+(2).何时需要指定路径：当你要编译的类所在的目录和你执行javac命令的目录不是同一个目录时，就需要指定源文件的路径(CLASSPATH是用来指定.class路径的，不是用来指定.java文件的路径的) 
+
+
+
+
+1、src不是classpath, WEB-INF/classes,lib才是classpath，WEB-INF/ 是资源目录, 客户端不能直接访问。
+2、WEB-INF/classes目录存放src目录java文件编译之后的class文件，xml、properties等资源配置文件，这是一个定位资源的入口。
+3、引用classpath路径下的文件，只需在文件名前加classpath:
+<param-value>classpath:applicationContext-*.xml</param-value> 
+<!-- 引用其子目录下的文件,如 -->
+<param-value>classpath:context/conf/controller.xml</param-value>
+1
+2
+3
+4、lib和classes同属classpath，两者的访问优先级为: lib>classes。
+5、classpath 和 classpath* 区别：
+classpath：只会到你的class路径中查找找文件;
+classpath*：不仅包含class路径，还包括jar文件中(class路径)进行查找。
+

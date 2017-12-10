@@ -16,6 +16,7 @@ namespace Publisher
             {
                 using (var channel = connection.CreateModel())
                 {
+                    channel.TxSelect();
                     while (!input.Equals("exit"))
                     {
                         //channel.ExchangeDeclare(exchange: "Test", type: "direct", durable: true);
