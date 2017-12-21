@@ -1,0 +1,16 @@
+http://www.cnblogs.com/wdpnodecodes/p/7407182.html
+
+基本概念
+Near Realtime(NRT): es是一个接近实时查询平台，意味从存储一条数据到可以索引到数据时差很小，通常在1s内
+Cluster: es是一个分布式、可扩展的平台, 可由一个或多个服务器通过定义的cluster.name（默认为elasticsearch）标识共建同一个集群
+Node: 通常一台服务器上部署一台es node，作为集群的一部分，用于数据的存储和提供搜索功能，在一个集群中节点通过node.name区分，默认在node启动时随机生成一个的字符串做为节点名称，可配置
+Index: 类似于关系型数据库中的database，用于组织一类功能相似的数据，在一个集群中可以定义任意个索引，索引的名称只能由小写字母组成，在数据索引，更新，搜索，删除时作为数据标识的一部分
+Type: 类似于关系型数据库中的table，在Index中可以定义多个Type，原则上一个Type是由相同属性组成的数据集合
+Document: 类似于关系型数据库中的record，是数据的最基本存储单元，使用json形式表示，Document在物理上存储在Index下，但是在逻辑上会分配到具体的Type下
+Shards & Replica:
+一个Index可能存储大量的数据(超过单个节点的硬件限制)，不管是数据存储还是数据索引，为解决数据单节点存储并提高并发，es将每一个Index物理分为多个片，从而水平扩展存储容量，提高并发（可以同时对个shard进行索引和搜索）
+为防止某个存储单元出现故障后数据不能索引的情况，es提供将shard进行复制功能，将主shard出现故障后，复制shard替代主shard进行数据索引操作，已此方式实现其高可用性，因为在搜索时可以使用复制shard，从而提高的数据搜索的并发性
+在Index创建时可以进行分片数量和复制数量的设置，默认创建每个Index设置5个shard和1个Replica，表示该Index由5个逻辑存储单元进行存储，每个逻辑存储单元具有一个复制节点进行备灾，注意，shard只能在创建Index时进行设置，shard数量与document分配到哪个shard上存储有关(通常使用hash(document _id) % shard num计算 document存储在哪个shard上)
+在es将主shard和replic分片在不同的Node上
+
+

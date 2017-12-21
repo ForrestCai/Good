@@ -1,0 +1,24 @@
+http://192.168.0.131:9200/_cat/health
+
+docker run -p 9200:9200 -p 9300:9300 -d  elasticsearch
+
+http://zhaoyanblog.com/archives/495.html
+http://blog.csdn.net/dm_vincent/article/details/41693125
+http://www.ruanyifeng.com/blog/2017/08/elasticsearch.html
+http://www.jianshu.com/p/05cff717563c
+http://blog.csdn.net/cnweike/article/details/33736429
+http://blog.csdn.net/u012332735/article/details/62222953
+
+
+elasticsearch-plugin install file:///D:/elasticsearch-5.2.1/bin/elasticfence-5.1.2-SNAPSHOT.zip
+
+http://blog.csdn.net/u012332735/article/details/54971638
+http://blog.csdn.net/dm_vincent/article/details/41820537
+https://www.cnblogs.com/xing901022/p/4967796.html
+http://blog.csdn.net/dm_vincent/article/details/41800351
+http://blog.csdn.net/dm_vincent/article/details/41890335
+http://blog.csdn.net/dm_vincent/article/details/41720193
+http://blog.csdn.net/dm_vincent/article/details/41842691
+http://blog.csdn.net/jiao_fuyou/article/details/49800969 all ×Ö¶Î
+
+http://blog.csdn.net/hereiskxm/article/details/47441911 ÖÐÓ¢ÎÄ·Ö´ÊÆ÷
