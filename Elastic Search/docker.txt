@@ -1,6 +1,13 @@
 http://192.168.0.131:9200/_cat/health
 
+
+
+
 docker run -p 9200:9200 -p 9300:9300 -d  elasticsearch
+
+
+docker run -d --net=host elasticsearch
+
 
 http://zhaoyanblog.com/archives/495.html
 http://blog.csdn.net/dm_vincent/article/details/41693125
