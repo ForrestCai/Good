@@ -1,0 +1,33 @@
+db.serverStatus().connections
+
+db.getCollection('sites').find({"Objs.0.items.key":"Id"},{_id:0,"Objs.items.value":1})
+
+db.getCollection('sites').find({"Objs.0.items.key":"Id"},{"Objs":{"$slice":1}})
+
+db.user.find({'_id':1},{'friends.name':1,'_id':0})
+
+db.staff.find({"name":{"first":"joe","middle":"bush"}});
+
+db.getCollection('sites').update({"Objs.0.items.key":"Id"},{ $set:{ "Objs.0.title": "站点信息"}}, false, true)
+
+db.collection.update(
+   <query>,
+   <update>,
+   {
+     upsert: <boolean>,
+     multi: <boolean>,
+     writeConcern: <document>
+   }
+)
+
+db.col.update({'title':'MongoDB 教程'},{$set:{'title':'MongoDB'}})
+
+
+db.students.update( { _id: 1 }, { $rename: { 'nickname': 'alias', 'cell': 'mobile' } }
+
+db.getCollection('sites').update({"OBJS.0.items.key":"Id"},{ $rename:{ "OBJS": "Objs"}}, false, true)
+
+
+
+
+
