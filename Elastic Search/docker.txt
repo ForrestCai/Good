@@ -26,6 +26,8 @@ http.port: 9200
 network.host: 0.0.0.0
 network.publish_host: 192.168.0.131
 discovery.zen.ping.unicast.hosts: ["192.168.0.131"]
+http.cors.enabled: true
+http.cors.allow-origin: "*"
 
 
 node:
@@ -37,6 +39,9 @@ http.port: 9200
 network.host: 0.0.0.0
 network.publish_host: 192.168.0.133
 discovery.zen.ping.unicast.hosts: ["192.168.0.131"]
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+
 
 
 http://blog.csdn.net/u012915455/article/details/78952068
