@@ -8,6 +8,42 @@ docker run -p 9200:9200 -p 9300:9300 -d  elasticsearch
 
 docker run -d --net=host elasticsearch
 
+docker run -d -v /es:/usr/share/elasticsearch/data -v /es/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml   --privileged --net=host elasticsearch
+
+
+vi /etc/sysctl.conf
+
+vm.max_map_count=262144
+
+sysctl -p
+
+master:
+cluster.name: elasticsearch_cluster
+node.name: node-master
+node.master: true
+node.data: true
+http.port: 9200
+network.host: 0.0.0.0
+network.publish_host: 192.168.0.131
+discovery.zen.ping.unicast.hosts: ["192.168.0.131"]
+
+
+node:
+cluster.name: elasticsearch_cluster
+node.name: node-data-1
+node.master: false
+node.data: true
+http.port: 9200
+network.host: 0.0.0.0
+network.publish_host: 192.168.0.133
+discovery.zen.ping.unicast.hosts: ["192.168.0.131"]
+
+
+http://blog.csdn.net/u012915455/article/details/78952068
+http://blog.csdn.net/haiyan_qi/article/details/77892743
+http://blog.sina.com.cn/s/blog_8ea8e9d50102wwik.html
+
+
 
 http://zhaoyanblog.com/archives/495.html
 http://blog.csdn.net/dm_vincent/article/details/41693125
