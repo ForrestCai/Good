@@ -1,0 +1,20 @@
+Create Proc up_ITL_SGR_GdsPnrsToProcess_Get
+	@lAgencyId Int,
+	@nItemsToProcess SmallInt
+As
+
+  set transaction isolation level read committed
+  
+	Set NoCount On;
+	;With RobotProcessing As (
+		Select Top (@nItemsToProcess) RP_lRobot_Processing_Id, RP_lAgency_Id, RP_sGds_Pnr, RP_dtProcessing_Start
+		From RP_Robot_Processing With (rowlock, readpast)
+		Where (
+			RP_dtProcessing_Start Is Null
+			Or DateAdd(MINUTE, 30, IsNull(RP_dtProcessing_Start, GetDate())) < GetDate()
+		)
+		And RP_lAgency_Id = @lAgencyId
+	)
+	Update RobotProcessing Set RP_dtProcessing_Start = GetDate()
+	Output deleted.RP_lRobot_Processing_Id, deleted.RP_lAgency_Id, deleted.RP_sGds_Pnr, deleted.RP_dtProcessing_Start
+Go
