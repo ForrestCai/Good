@@ -1,0 +1,15 @@
+docker run -d --name kong-database -p 9042:9042 cassandra:3.0
+
+
+./bin/cqlsh 127.0.0.1:9042
+
+$CASSANDRA_HOME/conf/cassandra.yaml
+
+
+三. Cassandra常用端口
+
+7199?JMX monitoring port (cassandra.bat)
+7000?Inter-node cluster?(cassandra.yaml)
+7001?SSL inter-node cluster?(cassandra.yaml)
+9042?CQL Native Transport Port?(cassandra.yaml)
+9160?Thrift?(cassandra.yaml)

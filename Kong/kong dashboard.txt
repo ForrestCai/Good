@@ -1,0 +1,5 @@
+docker pull pgbi/kong-dashboard:v3
+
+
+docker run --rm -p 8080:8080 pgbi/kong-dashboard:v3 start --kong-url http://192.168.0.131:8001
+

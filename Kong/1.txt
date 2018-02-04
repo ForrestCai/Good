@@ -1,0 +1,68 @@
+docker run --rm \
+    --link kong-database:kong-database \
+    -e "KONG_DATABASE=cassandra" \
+    -e "KONG_PG_HOST=kong-database" \
+    -e "KONG_CASSANDRA_CONTACT_POINTS=kong-database" \
+    kong kong migrations up
+
+
+docker run -d --name kong \
+    --link kong-database:kong-database \
+    -e "KONG_DATABASE=cassandra" \
+    -e "KONG_CASSANDRA_CONTACT_POINTS=kong-database" \
+    -e "KONG_PROXY_ACCESS_LOG=/dev/stdout" \
+    -e "KONG_ADMIN_ACCESS_LOG=/dev/stdout" \
+    -e "KONG_PROXY_ERROR_LOG=/dev/stderr" \
+    -e "KONG_ADMIN_ERROR_LOG=/dev/stderr" \
+    -e "KONG_ADMIN_LISTEN=0.0.0.0:8001" \
+    -e "KONG_ADMIN_LISTEN_SSL=0.0.0.0:8444" \
+    -p 8000:8000 \
+    -p 8443:8443 \
+    -p 8001:8001 \
+    -p 8444:8444 \
+    kong:0.12
+
+
+http://192.168.0.131:8001/status
+
+http://192.168.0.131:8001/apis/{name or id}
+
+http://192.168.0.131:8001/apis
+
+http://192.168.0.131:8001/consumers
+
+http://192.168.0.131:8001/plugins
+
+http://192.168.0.131:8001/plugins/enabled
+
+http://192.168.0.131:8001/plugins/schema/{plugin name}
+
+
+
+
+curl -i -X POST http://192.168.0.131:8001/apis/ \
+    -d 'name=k8s' \
+    -d 'upstream_url=http://192.168.0.131/kube/' \
+    -d 'uris=/k8s' \
+    -d 'methods=GET,HEAD'
+
+
+curl -i -X POST http://192.168.0.131:8001/apis/ \
+    -d 'name=myservice' \
+    -d 'upstream_url=http://192.168.0.129:30001/' \
+    -d 'uris=/myservice' \
+    -d 'methods=GET,HEAD'
+
+
+curl -i -X POST \
+  --url http://192.168.0.131:8001/apis/myservice/plugins/ \
+  --data 'name=key-auth'
+
+
+curl -i -X POST \
+  --url http://192.168.0.131:8001/consumers/forrest/key-auth/ \
+  --data 'key=123456'
+
+
+curl -i -X GET http://192.168.0.131:8000/myservice \
+ --header "apikey: 123456"
