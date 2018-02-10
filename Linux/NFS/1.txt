@@ -1,0 +1,38 @@
+CentOS 7  安装配置 NFS
+环境
+nps 192.168.1.97
+client 192.168.1.98
+一、yum 安装
+yum -y install nfs-utils rpcbind
+nfs 的配置文件 /etc/expots
+默认为空
+vi /etc/exports
+/opt/test/ 192.168.1.0/24(rw,no_root_squash,no_all_squash,sync,anonuid=501,anongid=501)
+二、使配置生效
+exportfs -r
+注：配置文件说明：
+/opt/test 为共享目录
+192.168.1.0/24  可以为一个网段，一个IP，也可以是域名，域名支持通配符 如: *.qq.com
+rw：read-write，可读写；
+ro：read-only，只读；
+sync：文件同时写入硬盘和内存；
+async：文件暂存于内存，而不是直接写入内存；
+no_root_squash：NFS客户端连接服务端时如果使用的是root的话，那么对服务端分享的目录来说，也拥有root权限。显然开启这项是不安全的。
+root_squash：NFS客户端连接服务端时如果使用的是root的话，那么对服务端分享的目录来说，拥有匿名用户权限，通常他将使用nobody或nfsnobody身份；
+all_squash：不论NFS客户端连接服务端时使用什么用户，对服务端分享的目录来说都是拥有匿名用户权限；
+anonuid：匿名用户的UID值，可以在此处自行设定。
+anongid：匿名用户的GID值。
+三、启动 nfs
+service rpcbind start
+service nfs start
+chkconfig rpcbind on
+chkconfig nfs on
+四、客户端挂载：
+showmount -e 192.168.1.97            #查看可挂载
+Export list for 192.168.1.97:
+/opt/test          192.168.1.0/24
+客户端挂载
+mount -t nfs 192.168.1.97:/opt/test /mnt
+无提示 既为成功
+客户端在挂载的时候遇到的一个问题如下，可能是网络不太稳定，NFS默认是用UDP协议，换成TCP协议即可：
+mount -t nfs 192.168.1.97:/opt/test /mnt -o proto=tcp -o nolock
