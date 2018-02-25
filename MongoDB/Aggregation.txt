@@ -1,0 +1,8 @@
+Aggregation Pipeline
+
+
+Map-Reduce
+
+
+Single Purpose Aggregation Operations
+
