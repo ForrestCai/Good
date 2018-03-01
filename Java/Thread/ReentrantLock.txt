@@ -1,0 +1,7 @@
+lock.newCondition()
+
+
+https://www.cnblogs.com/Wanted-Tao/p/6378942.html
+
+
+http://tenyears.iteye.com/blog/48750
