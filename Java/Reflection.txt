@@ -1,0 +1,7 @@
+Class<?> rtClass = Class.forName
+rtClass.getMethods()
+rtClass.isAnnotationPresent
+rtClass.getAnnotation
+
+Field[] fields = user.getClass().getDeclaredFields();
+Annotation[] annotations = field.getAnnotations()
