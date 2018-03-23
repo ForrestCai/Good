@@ -29,5 +29,37 @@ db.getCollection('sites').update({"OBJS.0.items.key":"Id"},{ $rename:{ "OBJS": "
 
 
 
+db.getCollection('sites').aggregate([
+   {$lookup:  
+     {  
+       from: "tower",  
+       localField: "_id",
+       foreignField: "siteId",  
+       as: "towers"  
+     }},
+          {$match:{$and:[{"country":"china"},{"towers.0": {$exists:1} }]}},
+          {$unwind:"$towers"}
+     ])
+
+
+db.getCollection('sites').aggregate([
+   {$lookup:  
+     {  
+       from: "tower",  
+       localField: "_id",
+       foreignField: "siteId",  
+       as: "towers"  
+     }},
+               {$unwind:"$towers"},
+          {$match:{$and:[{"country":"china"},{"towers.code":"bad2"}]}},
+
+     ])
+
+
+db.runCommand ( { distinct: "sites", key: "country" } )
+
+
+
+
 
 
