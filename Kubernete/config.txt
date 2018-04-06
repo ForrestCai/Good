@@ -1,0 +1,341 @@
+内网系统中建议关闭防火墙服务：
+# systemctl disable firewalld
+# systemctl stop firewalld
+1
+2
+修改/etc/hosts文件
+# 192.168.123.201 kubernetes-master
+# 192.168.123.202 kubernetes-node1
+# 192.168.123.203 kubernetes-node2
+1
+2
+3
+关闭selinux
+# vim /etc/selinux/config
+SELINUX=disabled
+1
+2
+关闭docker的selinux功能
+# vim /etc/sysconfig/docker
+OPTIONS='--selinux-enabled=false'
+1
+2
+1.Master上配置kube-apiserver,kube-controller-manager,kube-scheduler服务
+(1) kube-apiserver服务 
+先确认etcd服务已经安装正确并启动，配置Kube-apiserver的启动参数
+# yum install -y etcd
+# vim /etc/etcd/etcd.conf
+ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"
+
+# yum install -y kubernetes
+# vim /usr/lib/systemd/system/kube-apiserver.service
+[Unit]
+Description=Kubernetes API Server
+Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+Wants=etcd.service
+After=etcd.service
+
+[Service]
+EnvironmentFile=-/etc/kubernetes/config
+EnvironmentFile=-/etc/kubernetes/apiserver
+User=kube
+ExecStart=/usr/bin/kube-apiserver \
+        $KUBE_LOGTOSTDERR \
+        $KUBE_LOG_LEVEL \
+        $KUBE_ETCD_SERVERS \
+        $KUBE_API_ADDRESS \
+        $KUBE_API_PORT \
+        $KUBELET_PORT \
+        $KUBE_ALLOW_PRIV \
+        $KUBE_SERVICE_ADDRESSES \
+        $KUBE_ADMISSION_CONTROL \
+        $KUBE_API_ARGS
+Restart=on-failure
+Type=notify
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+配置文件/etc/kubernetes/config，文件的内容为所有服务都需要的参数
+KUBE_LOGTOSTDERR="--logtostderr=true"
+KUBE_LOG_LEVEL="--v=0"
+KUBE_ALLOW_PRIV="--allow_privileged=false"
+KUBE_MASTER="--master=http://kubernetes-master:8080"
+1
+2
+3
+4
+配置文件/etc/kubernetes/apiserver，内容包括：绑定主机的IP地址、端口号、etcd服务地址、Service所需的Cluster IP池、一系列admission控制策略等
+KUBE_API_ADDRESS="--address=0.0.0.0"
+KUBE_API_PORT="--port=8080"
+KUBE_ETCD_SERVERS="--etcd_servers=http://127.0.0.1:2379"
+KUBE_SERVICE_ADDRESSES="--service-cluster-ip-range=10.254.0.0/16"
+KUBE_ADMISSION_CONTROL="--admission_control=NamespaceLifecycle,NamespaceExists,LimitRanger,SecurityContextDeny,ServiceAccount,ResourceQuota"
+KUBE_API_ARGS=""
+1
+2
+3
+4
+5
+6
+(2) kube-controller-manager服务 
+kube-controller-manager服务依赖于etcd和kube-apiserver服务
+# vim /usr/lib/systemd/system/kube-controller-manager.service
+
+[Unit]
+Description=Kubernetes Controller Manager
+Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+After=etcd.service
+After=kube-apiserver.service
+Requires=etcd.service
+Requires=kube-apiserver.service
+
+[Service]
+EnvironmentFile=-/etc/kubernetes/config
+EnvironmentFile=-/etc/kubernetes/controller-manager
+User=kube
+ExecStart=/usr/bin/kube-controller-manager \
+        $KUBE_LOGTOSTDERR \
+        $KUBE_LOG_LEVEL \
+        $KUBE_MASTER \
+        $KUBE_CONTROLLER_MANAGER_ARGS
+Restart=on-failure
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+(3) kube-scheduler服务 
+kube-scheduler服务也依赖于etcd和kube-apiserve
+# vim /usr/lib/systemd/system/kube-scheduler.service
+
+[Unit]
+Description=Kubernetes Scheduler Plugin
+Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+After=etcd.service
+After=kube-apiserver.service
+Requires=etcd.service
+Requires=kube-apiserver.service
+
+[Service]
+EnvironmentFile=-/etc/kubernetes/config
+EnvironmentFile=-/etc/kubernetes/scheduler
+User=kube
+ExecStart=/usr/bin/kube-scheduler \
+        $KUBE_LOGTOSTDERR \
+        $KUBE_LOG_LEVEL \
+        $KUBE_MASTER \
+        $KUBE_SCHEDULER_ARGS
+Restart=on-failure
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+完成后，通过systemctl start命令启动3个服务。同时，使用systemctl enable命令将服务加入开机启动列表中。
+# systemctl daemon-reload
+# systemctl start etcd kube-apiserver.service kube-controller-manager kube-scheduler
+# systemctl enable etcd kube-apiserver.service kube-controller-manager kube-scheduler
+1
+2
+3
+通过systemctl status 来验证服务启动的状态。
+2.Node上配置kubelet,kube-proxy服务
+(1) kubelet服务 
+配置kubelet服务，它依赖于Docker服务
+# vim /usr/lib/systemd/system/kubelet.service
+[Unit]
+Description=Kubernetes Kubelet Server
+Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+After=docker.service
+Requires=docker.service
+
+[Service]
+WorkingDirectory=/var/lib/kubelet
+EnvironmentFile=-/etc/kubernetes/config
+EnvironmentFile=-/etc/kubernetes/kubelet
+ExecStart=/usr/bin/kubelet \
+            $KUBE_LOGTOSTDERR \
+            $KUBE_LOG_LEVEL \
+            $KUBELET_API_SERVER \
+            $KUBELET_ADDRESS \
+            $KUBELET_PORT \
+            $KUBELET_HOSTNAME \
+            $KUBE_ALLOW_PRIV \
+            $KUBELET_ARGS
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+修改配置文件/etc/kubernetes/kubelet，内容包括：绑定主机IP地址、端口号、apiserver的地址及其他参数
+KUBELET_ADDRESS="--address=0.0.0.0"
+KUBELET_PORT="--port=10250"
+KUBELET_HOSTNAME="--hostname_override=kubernetes-node1"
+KUBELET_API_SERVER="--api_servers=http://kubernetes-master:8080"
+KUBELET_ARGS=""
+1
+2
+3
+4
+5
+(2) kube-proxy服务 
+配置kube-proxy服务，它依赖于Linux的network服务
+# vim /usr/lib/systemd/system/kube-proxy.service
+[Unit]
+Description=Kubernetes Kube-Proxy Server
+Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+After=network.target
+
+[Service]
+EnvironmentFile=-/etc/kubernetes/config
+EnvironmentFile=-/etc/kubernetes/proxy
+ExecStart=/usr/bin/kube-proxy \
+            $KUBE_LOGTOSTDERR \
+            $KUBE_LOG_LEVEL \
+            $KUBE_MASTER \
+            $KUBE_PROXY_ARGS
+Restart=on-failure
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+配置文件/etc/kubernetes/proxy无须特别的参数设置 
+kubelet和kube-proxy都需要的配置文件/etc/kubernetes/config的内容示例如下：
+KUBE_LOGTOSTDERR="--logtostderr=true"
+KUBE_LOG_LEVEL="--v=0"
+KUBE_ALLOW_PRIV="--allow_privileged=false"
+KUBE_MASTER="--master=http://kubernetes-master:8080"
+1
+2
+3
+4
+配置完成后，通过systemctl启动服务：
+# systemctl daemon-reload
+# systemctl start kubelet.service kube-proxy docker
+# systemctl enable kubelet.service kube-proxy docker
+1
+2
+3
+kubelet默认采用向Master自注册的机制，在Master上查看名Node的状态(# kubelet get nodes)，状态为Ready表示Node向Master注册成功。

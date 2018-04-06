@@ -1,0 +1,15 @@
+Kong comes with a default configuration file that can be found at /etc/kong/kong.conf.default if you installed Kong via one of the official packages. To start configuring Kong, you can copy this file:
+$ cp /etc/kong/kong.conf.default /etc/kong/kong.conf
+Kong will operate with default settings should all the values in your configuration be commented-out. Upon starting, Kong looks for several default locations that might contain a configuration file:
+/etc/kong/kong.conf
+/etc/kong.conf
+You can override this behavior by specifying a custom path for your configuration file using the -c / --conf argument in the CLI:
+$ kong start --conf /path/to/kong.conf
+The configuration format is straightforward: simply uncomment any property (comments are defined by the # character) and modify it to your needs. Booleans values can be specified as on/off or true/false for convenience.
+Back to TOC
+Verifying your configuration
+You can verify the integrity of your settings with the check command:
+$ kong check <path/to/kong.conf>
+configuration at <path/to/kong.conf> is valid
+This command will take into account the environment variables you have currently set, and will error out in case your settings are invalid.
+Additionally, you can also use the CLI in debug mode to have more insight as to what properties Kong is being started with:
