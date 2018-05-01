@@ -1,10 +1,15 @@
 package Practice.FirstProject;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.InputStream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -84,6 +89,43 @@ public class TestController {
         MultiValueMap<String, Object> param = new LinkedMultiValueMap<String, Object>();  
         param.add("jarFile", resource);  
         param.add("fileName", "test.txt");  
+      
+        String string = rest.postForObject(url, param, String.class);  
+        System.out.println(string);  
+        
+    	return "good";
+    }
+    
+    @RequestMapping(value = "/upload3", method = RequestMethod.POST)
+    @ApiOperation(value = "上传", notes = "")
+    public String upload3()
+    {
+        String url = "http://localhost:8011/user/upload2";  
+        String filePath = "C:\\Users\\forrest\\Desktop\\1.txt";  
+      
+        RestTemplate rest = new RestTemplate();  
+//        FileSystemResource resource = new FileSystemResource(new File(filePath));
+        
+//        InputStream is = new ByteArrayInputStream("good test".getBytes());        
+//        InputStreamResource resource = new InputStreamResource(is){   
+//            @Override  
+//            public String getFilename() throws IllegalStateException {   
+//                return "c://1.test";  
+//            }              
+//        };
+//        
+        
+        ByteArrayResource resource = new ByteArrayResource("good test".getBytes()){   
+                @Override  
+                public String getFilename() throws IllegalStateException {   
+                    return "c://1.test";  
+                }  
+                  
+            }; 
+            
+        
+        MultiValueMap<String, Object> param = new LinkedMultiValueMap<String, Object>();  
+        param.add("file", resource); 
       
         String string = rest.postForObject(url, param, String.class);  
         System.out.println(string);  
