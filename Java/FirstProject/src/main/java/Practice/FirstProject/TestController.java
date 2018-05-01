@@ -3,8 +3,14 @@ package Practice.FirstProject;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -12,6 +18,8 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
@@ -131,5 +139,81 @@ public class TestController {
         System.out.println(string);  
         
     	return "good";
+    }
+    
+    @RequestMapping(value = "/download", method = RequestMethod.POST)
+    @ApiOperation(value = "下载", notes = "")
+    public ResponseEntity<InputStreamResource> download() throws IOException
+    {
+    	 String filePath = "C:\\Users\\forrest\\Desktop\\1.txt";  
+         FileSystemResource file = new FileSystemResource(filePath);  
+         HttpHeaders headers = new HttpHeaders();  
+         headers.add("Cache-Control", "no-cache, no-store, must-revalidate");  
+         headers.add("Content-Disposition", String.format("attachment; filename=\"%s\"", file.getFilename()));  
+         headers.add("Pragma", "no-cache");  
+         headers.add("Expires", "0");  
+   
+         return ResponseEntity
+                 .ok()  
+                 .headers(headers)  
+                 .contentLength(file.contentLength())  
+                 .contentType(MediaType.parseMediaType("application/octet-stream"))  
+                 .body(new InputStreamResource(file.getInputStream()));  
+    }
+    
+    @RequestMapping(value = "/download2", method = RequestMethod.POST)
+    @ApiOperation(value = "下载", notes = "")
+    public void download2(HttpServletResponse response) throws IOException
+    {
+    	 // Get your file stream from wherever.  
+    	String filePath = "C:\\Users\\forrest\\Desktop\\1.txt";   
+        File downloadFile = new File(filePath);  
+  
+        // set content attributes for the response  
+        response.setContentType("application/octet-stream");  
+        response.setContentLength((int) downloadFile.length());  
+  
+        // set headers for the response  
+        String headerKey = "Content-Disposition";  
+        String headerValue = String.format("attachment; filename=\"%s\"",  
+                downloadFile.getName());  
+        response.setHeader(headerKey, headerValue);  
+  
+        // Copy the stream to the response's output stream.
+        try {  
+            InputStream myStream = new FileInputStream(filePath);  
+            IOUtils.copy(myStream, response.getOutputStream());  
+            response.flushBuffer();  
+        } catch (IOException e) {  
+            e.printStackTrace();  
+        }   
+    }
+    
+    @RequestMapping(value = "/download3", method = RequestMethod.POST)
+    @ApiOperation(value = "下载", notes = "")
+    public ResponseEntity<byte[]> download3() throws IOException
+    {
+        HttpHeaders headers=new HttpHeaders();  
+        headers.add("Content-Disposition","attachment;filename=11.txt");  
+   
+        HttpStatus statusCode=HttpStatus.OK;  
+   
+        ResponseEntity<byte[]> response=new ResponseEntity<byte[]>("good test".getBytes(),headers,statusCode);  
+        return response;  
+    }
+    
+    @RequestMapping(value = "/downloadtest", method = RequestMethod.GET)
+    @ApiOperation(value = "下载测试", notes = "")
+    public void downloadtest()
+    {
+        String url = "http://localhost:8011/user/download3"; 
+        RestTemplate rest = new RestTemplate();  
+        ResponseEntity<byte[]> response = rest.exchange(
+                url,
+                HttpMethod.POST,
+                null,
+                byte[].class);
+
+            byte[] result = response.getBody();
     }
 }
