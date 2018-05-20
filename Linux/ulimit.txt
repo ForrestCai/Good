@@ -1,0 +1,18 @@
+1.linux查看修改线程默认栈空间大小 ulimit -s
+a、通过命令 ulimit -s 查看linux的默认栈空间大小，默认情况下 为10240 即10M
+b、通过命令 ulimit -s 设置大小值 临时改变栈空间大小：ulimit -s 102400， 即修改为100M
+c、可以在/etc/rc.local 内 加入 ulimit -s 102400 则可以开机就设置栈空间大小
+d、在/etc/security/limits.conf 中也可以改变栈空间大小：
+#<domain> <type> <item> <value>
+* soft stack 102400
+重新登录，执行ulimit -s 即可看到改为102400 即100M
+
+5.ulimit -s ulimited是啥意思.
+
+
+ulimit -a
+
+
+    （1）进程栈大小时执行时确定的，与编译链接无关
+    （2）进程栈大小是随机确认的，至少比线程栈要大，但不会超过2倍
+    （3）线程栈是固定大小的，可以使用ulimit -a 查看，使用ulimit -s 修改

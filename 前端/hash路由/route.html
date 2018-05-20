@@ -1,0 +1,44 @@
+<html>
+<head>
+<script type="text/javascript" src="route.js"></script>
+<script>
+  const router = new Router();
+  router.init();
+  router.addRoute('/', function () {
+    document.getElementById('content').innerHTML = 'Home';
+  });
+  router.addRoute('/about', function () {
+    document.getElementById('content').innerHTML = 'About';
+  });
+  router.addRoute('/topics', function () {
+    document.getElementById('content').innerHTML = 'Topics';
+  });
+  router.addRoute('/help', function () {
+    document.getElementById('content').innerHTML = 'Help';
+  });
+  
+  function goToHelp() {
+		location.hash='/help';
+  };
+</script>
+</head>
+
+<body>
+<div id="app">
+  <ul>
+    <li>
+      <a href="#/">home</a>
+    </li>
+    <li>
+      <a href="#/about">about</a>
+    </li>
+    <li>
+      <a href="#/topics">topics</a>
+    </li>
+  </ul>
+  <input type='button' value='Help' onclick="goToHelp()"/>
+  <div id="content"></div>
+</div>
+</body>
+
+</html>
