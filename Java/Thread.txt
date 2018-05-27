@@ -1,0 +1,5 @@
+Java四种线程池
+newCachedThreadPool,
+newFixedThreadPool,
+newScheduledThreadPool,
+newSingleThreadExecutor

@@ -1,0 +1,16 @@
+LongRunningµÄTask
+
+
+TaskScheduler
+
+Yes. Side effect is that: if you have a million tasks, you could potentially create a million threads. 
+Need to take into account that each thread will bring its memory overhead and context switching overhead. Memory overhead is not that small, we are talking a few MB here so even with thousands of items, you could run into trouble.
+
+
+The LongRunning option is a hint to the scheduler which means it may choose to execute the Task on a non-ThreadPool Thread (if it's the thread-pool backed DefaultScheduler it most likely will). One side-effect of the LongRunning option is that Task Inlining is disallowed for that Task. This means that if the LongRunning Task creates other nested or child Tasks and calls Wait on any of those Tasks, they will always be executed on a different Thread rather than being inlined (i.e. run on the same Thread performing the Wait). 
+In the context of other people's answers it's worth noting that creating a large number of Tasks that take a long time to complete without the LongRunning hint is still likely to cause an escalation in the number of Threads due to the Thread Injection algorithm that the DefaultScheduler uses. The algorithm doesn't distinguish between Threads in the pool that are blocked and those that have been running a work item for a long time and in both cases can respond by injecting more Threads into the pool to try to increase work-throughput.
+
+
+LongRunning tasks, indicates that the global and local queues will be bypassed, so as to prevent it from blocking the other threads coming after it in the local queue.
+That means, if you have lot of these Long Running tasks, it could create more threads than normal.
+You can see in the answers on this question some of the drawbacks:
