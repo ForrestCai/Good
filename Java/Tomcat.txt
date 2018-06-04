@@ -1,0 +1,16 @@
+调优
+
+Tomcat的默认配置，性能并不是最优的，我们可以通过优化tomcat以此来提高网站的并发能力。提高Tomcat的性能可以分为两个方向。
+
+服务器资源
+服务器所能提供CPU、内存、硬盘的性能对处理能力有决定性影响，所以说服务器性能牛B，Tomcat也不会太差。当然提高服务器的硬件配置，是需要大量RMB的支持的。所以不到万不得已不会采用这种方式，一般公司会采取下面这种通过优化配置，来提升Tomcat性能的方式。
+
+优化配置
+优化配置之前，我们需要配置一个tomcat管理员账户，来登录查看Tomcat控制台提高的各种参数。
+在conf/ tomcat-users.xml下添加用户：
+<role rolename="manager"/>
+<role rolename="manager-gui"/>
+<role rolename="admin"/>
+<role rolename="admin-gui"/>
+<user username="tomcat" password="tomcat" roles="admin-gui,admin,manager-gui,manager"/
+
