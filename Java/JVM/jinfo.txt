@@ -1,0 +1,1 @@
+jinfo -flag JVMParamName pid
