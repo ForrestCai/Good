@@ -1,0 +1,13 @@
+服务器激活:    http://idea.youbbs.org
+
+
+http://www.jetbrains.com/help/go/mastering-keyboard-shortcuts.html
+
+
+run kind选package 
+
+
+https://blog.csdn.net/u010884123/article/details/55509677?locationNum=6&fps=1
+
+
+go get 
