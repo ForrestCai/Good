@@ -33,6 +33,8 @@ slice1 := make([]type, len)
 函数可以返回多个值
 函数闭包
 
+变量或函数名的首字母大写时，其就是可导出的，小写时则是不可导出的
+
 channel 和 goroutine 
 
 

@@ -3,6 +3,7 @@
   <component name="Go" enabled="true" />
   <component name="NewModuleRootManager">
     <content url="file://C:/Go/gopath/src/golang.org/x/tools/benchmark" />
+    <content url="file://$MODULE_DIR$/../github.com/hyper-carrot/go_lib/logging" />
     <content url="file://$MODULE_DIR$" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
