@@ -1,0 +1,19 @@
+转换类型的时候如果是string可以不用断言，使用fmt.Sprint()函数可以达到想要的效果
+
+变量的定义和申明可以用组的方式，如：
+
+var (
+   a string
+   b int
+   c int64
+   ...
+)
+
+import (
+    "fmt"
+    "strings"
+    "net/http"
+   ...
+)
+
+使用net/http包和net/url包的函数，可能会带有url encode功能，需要注意
