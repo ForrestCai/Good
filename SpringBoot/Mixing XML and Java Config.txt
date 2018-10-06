@@ -1,0 +1,85 @@
+In an enterprise application, you¡¯ll probably have multiple configuration files to structure your application. Using spring, these configuration files can vary from XML to Java Configuration. This tutorial shows you how to import an XML Configuration file into a Java Configuration and vice versa.
+
+Import XML Configuration in Java Config
+You can use the @ImportResource annotation and provide the location of your XML Configuration file you want to import. Optionally, you can specify multiple configuration files. The @Import annotation is used to import an additional Spring Java Configuration file.
+package com.memorynotfound.spring.core;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.ImportResource;
+
+@Configuration
+@Import({ DbConfig.class })
+@ImportResource("classpath:app-config.xml")
+public class AppConfig {
+
+}
+This is a second configuration file located in the same package. And is loaded in the main configuration.
+package com.memorynotfound.spring.core;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.ImportResource;
+
+@Configuration
+public class DbConfig {
+
+}
+The app-config.xml is located on the classpath.
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+</beans>
+In a standard Java SE environment, we can bootstrap Spring using the AnnotationConfigApplicationContext and provide the Java Configuration class as an argument.
+ApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
+When starting spring in a web server environment you should add the following context parameter in your web.xml file, located in the WEB-INF directory.
+<context-param>
+    <param-name>contextClass</param-name>
+    <param-value>org.springframework.web.context.support.AnnotationConfigWebApplicationContext</param-value>
+</context-param>
+Loading Java Config in XML
+You can also load Java Configuration files inside your Spring XML Configuration files. By registering the <context:component-scan/> element and adding the attribute base-package and specify the packages where the Java Configuration files are located to be automatically scanned. The first <import/> element imports an additional xml configuration file.
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!-- loading additional xml config -->
+    <import resource="classpath:db-config.xml"/>
+    
+    <!-- loading java config files in package -->
+    <context:component-scan base-package="com.memorynotfound.spring.core.config" />
+
+</beans>
+This is the db-config.xml file, located on the classpath.
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+</beans>
+This is the java configuration file we are loading in the xml configuration and it is located in the com.memorynotfound.spring.core.config package.
+package com.memorynotfound.spring.core.config;
+
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class AppConfig {
+
+}
+We can bootstrap spring application using the ClassPathXmlApplicationContext and provide the location of the Spring XML configuration file.
+ApplicationContext context = new ClassPathXmlApplicationContext("app-config.xml");
+Or when you use spring in a web application, you can register the Spring XML configuration file by adding the following context parameter.
+<context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>classpath:app-config.xml</param-value>
+</context-param>
