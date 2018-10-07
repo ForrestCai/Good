@@ -48,6 +48,19 @@ public class TestController {
     @Autowired
     RestTemplate resttemplate;
     
+    @RequestMapping(value = "/test", method = RequestMethod.GET)
+    public String Test1()
+    {
+    	try {
+			Thread.sleep(300000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
+    	return "";
+    }
+    
     @RequestMapping(value = "/", method = RequestMethod.POST)
     @ApiOperation(value = "更新用户", notes = "更新已存在用户")    
     public String Test()

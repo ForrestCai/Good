@@ -1,0 +1,131 @@
+设计 @Configuration 和 @Bean 的初衷，并不是为了完全取代 XML，而是为了在 XML 之外多一种可行的选择。由于 Spring 自发布以来，Spring 开发小组便不断简化 XML 配置，使得 XML 配置方式已经非常成熟，加上 Spring 2.0 以后出现了一系列命名空间的支持，使得 XML 配置方式成为了使用简单、功能强大的 Bean 定义方式。而且，XML 配置的一些高级功能目前还没有相关注解能够直接支持。因此，在目前的多数项目中，要么使用纯粹的 XML 配置方式进行 Bean 的配置，要么使用以注解为主，XML 为辅的配置方式进行 Bean 的配置。
+之所以会出现两者共存的情况，主要归结为三个原因：其一，目前绝大多数采用 Spring 进行开发的项目，几乎都是基于 XML 配置方式的，Spring 在引入注解的同时，必须保证注解能够与 XML 和谐共存，这是前提；其二，由于注解引入较晚，因此功能也没有发展多年的 XML 强大，因此，对于复杂的配置，注解还很难独当一面，在一段时间内仍然需要 XML 的配合才能解决问题。除此之外，Spring 的 Bean 的配置方式与 Spring 核心模块之间是解耦的，因此，改变配置方式对 Spring 的框架自身是透明的。Spring 可以通过使用 Bean 后处理器 (BeanPostProcessor) 非常方便的增加对于注解的支持。这在技术实现上非常容易的事情。
+要使用混合配置方式，首先需要判断以哪一种配置方式为主。对这个问题的不同回答将会直接影响到实现的方式。然而大可不必为此伤脑筋，因为不论是以 XML 为主，还是以注解为主，配置方式都是简单而且容易理解的。这里不存在错误的决定，因为仅仅是表现方式不一样。我们首先假设以 XML 配置为主的情况。
+对于已经存在的大型项目，可能初期是以 XML 进行 Bean 配置的，后续逐渐加入了注解的支持，这时我们只需在 XML 配置文件中将被 @Configuration 标注的类定义为普通的 <bean>，同时注册处理注解的 Bean 后处理器即可。示例如下：
+ // 假设存在如下的 @Configuration 类：
+ package bookstore.config; 
+ import bookstore.dao.*; 
+ @Configuration 
+ public class MyConfig{ 
+ @Bean 
+    public UserDao userDao(){ 
+        return new UserDaoImpl(); 
+    } 
+ } 
+此时，只需在 XML 中作如下声明即可：
+ <beans … > 
+    ……
+    <context:annotation-config /> 
+    <bean class=”demo.config.MyConfig”/> 
+ </beans> 
+ 
+由于启用了针对注解的 Bean 后处理器，因此在 ApplicationContext 解析到 MyConfig 类时，会发现该类标注了 @Configuration 注解，随后便会处理该类中标注 @Bean 的方法，将这些方法的返回值注册为容器总的 Bean。
+对于以上的方式，如果存在多个标注了 @Configuration 的类，则需要在 XML 文件中逐一列出。另一种方式是使用前面提到的自动扫描功能，配置如下：
+ <context:component-scan base-package=”bookstore.config” /> 
+ 
+如此，Spring 将扫描所有 demo.config 包及其子包中的类，识别所有标记了 @Component、@Controller、@Service、@Repository 注解的类，由于 @Configuration 注解本身也用 @Component 标注了，Spring 将能够识别出 @Configuration 标注类并正确解析之。
+对于以注解为中心的配置方式，只需使用 @ImportResource 注解引入存在的 XML 即可，如下所示：
+ @Configuration 
+ @ImportResource(“classpath:/bookstore/config/spring-beans.xml”) 
+ public class MyConfig{ 
+……
+ } 
+ // 容器的初始化过程和纯粹的以配置为中心的方式一致：
+ AnnotationConfigApplicationContext ctx = 
+              new AnnotationConfigApplicationContext(MyConfig.class); 
+……
+
+ 
+ 
+@Configuration的使用
+Java代码  
+AppConfig.javapackage com.web.spring.other;   
+  
+import org.springframework.beans.factory.annotation.Value;   
+import org.springframework.context.annotation.Bean;   
+import org.springframework.context.annotation.Configuration;   
+import org.springframework.context.annotation.ImportResource;   
+  
+@Configuration  
+@ImportResource("classpath*:spring/spring-properties.xml")   
+public class AppConfig {   
+    private @Value("${jdbc.driverClassName}") String driverClassName;   
+    @Bean(initMethod = "init")   
+    public JDBCBean jdbc(){   
+        JDBCBean jdbc=new JDBCBean();   
+        jdbc.setDriverClassName(driverClassName);   
+        return jdbc;   
+    }   
+  
+}  
+AppConfig.javapackage com.web.spring.other;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ImportResource;
+
+@Configuration
+@ImportResource("classpath*:spring/spring-properties.xml")
+public class AppConfig {
+    private @Value("${jdbc.driverClassName}") String driverClassName;
+    @Bean(initMethod = "init")
+    public JDBCBean jdbc(){
+        JDBCBean jdbc=new JDBCBean();
+        jdbc.setDriverClassName(driverClassName);
+        return jdbc;
+    }
+
+}
+
+ 
+Xml代码  
+<?xml version="1.0" encoding="UTF-8"?>  
+<beans xmlns="http://www.springframework.org/schema/beans"  
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"  
+    xsi:schemaLocation="http://www.springframework.org/schema/beans      
+            http://www.springframework.org/schema/beans/spring-beans-3.0.xsd     
+            http://www.springframework.org/schema/context     
+            http://www.springframework.org/schema/context/spring-context-3.0.xsd">  
+    <context:annotation-config/>  
+    <!-- picks up and registers AppConfig as a bean definition -->  
+    <context:component-scan base-package="com.web.spring.other" />  
+    <context:property-placeholder location="classpath:jdbc.properties" />  
+    <bean class="com.web.spring.other.AppConfig"/>  
+</beans>  
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans   
+            http://www.springframework.org/schema/beans/spring-beans-3.0.xsd  
+            http://www.springframework.org/schema/context  
+            http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+    <context:annotation-config/>
+    <!-- picks up and registers AppConfig as a bean definition -->
+    <context:component-scan base-package="com.web.spring.other" />
+    <context:property-placeholder location="classpath:jdbc.properties" />
+    <bean class="com.web.spring.other.AppConfig"/>
+</beans>
+
+
+
+ 
+使用@Configuration注解需要依赖CGLIB的JAR包
+否则异常
+Java代码  
+Exception in thread "main" java.lang.IllegalStateException: CGLIB is required to process @Configuration classes.    
+Either add CGLIB to the classpath or remove the following @Configuration bean definitions: [spring3HelloWorldConfig]   
+  
+at org.springframework.context.annotation.ConfigurationClassPostProcessor.enhanceConfigurationClasses(ConfigurationClassPostProcessor.java:257)   
+  
+at org.springframework.context.annotation.ConfigurationClassPostProcessor.postProcessBeanFactory(ConfigurationClassPostProcessor.java:147)   
+  
+at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:624)   
+  
+at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:614)   
+  
+at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:398)   
+  
+at org.springframework.context.annotation.AnnotationConfigApplicationContext.<init>(AnnotationConfigApplicationContext.java:65)   
+  
+at net.roseindia.Spring3HelloWorldConfigTest.main(Spring3HelloWorldConfigTest.java:9)  

@@ -129,3 +129,6 @@ Interface
 需要继承，要用extends
 
 要用implements
+
+
+IDisposable
