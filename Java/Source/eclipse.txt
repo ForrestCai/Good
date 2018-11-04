@@ -1,0 +1,11 @@
+背景：在eclipse上，有时想看现有工程用到的第三方jar的源码时，鼠标移到方法上，按“ctrl+左键”，跳转提示“source not found”。
+
+解决步骤：
+1、在eclipse上“Window”-->“Preferences”-->"Maven"上，勾选“Download Artifact Sources”、“Download Artifact JavaDoc”两项。
+
+2、在工程的pom.xml-->右键-->Run As-->Maven build...-->Goals:输入“dependency:sources”,-->勾选“Update Snapshots”、“Skip Test”-->Run
+--------------------- 
+作者：我叫张海涛 
+来源：CSDN 
+原文：https://blog.csdn.net/zhanghtkdum2/article/details/72528596 
+版权声明：本文为博主原创文章，转载请附上博文链接！
