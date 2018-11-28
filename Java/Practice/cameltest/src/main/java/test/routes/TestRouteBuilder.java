@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import test.processors.TestProcessor;
 
-//@Component
+@Component
 public class TestRouteBuilder extends RouteBuilder {
 
     @Autowired
@@ -15,7 +15,6 @@ public class TestRouteBuilder extends RouteBuilder {
 
     public void configure() {
         from("timer://timer1?period=10000")
-                .log(">>> ${body.id}")
                 .process(processor);
     }
 }
