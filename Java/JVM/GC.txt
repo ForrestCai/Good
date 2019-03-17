@@ -1,0 +1,52 @@
+Hotspot JVM使用和 IBM Websphere及 OracleWeblogic不同的垃圾回收机制，但是垃圾回收的概念和算法是相通的。
+ 
+HotSpotJVM
+ 
+1）HotSpotJVM使用内存分区（如永久perm区和分代Generation Heap区），分代区(Generation Heap区)又包括新生Yong区和老生Old/Tenured区，Yong区中又分为Eden区和 Survior区（2块）；
+
+2）Yong区 GC：对象先在Yong区的Eden中得到分配，任何时候Eden区满了就会触发Yong区GC (Minor GC?)，会把Yong区Eden中仍存活的Live对象拷贝到空的那个Survior区，除此之外，另外一个Survior区中的对象也会被检查和拷贝（在2个Survior区之间拷贝对象的频率是可配置的），其结果就是对象仅存在于一个Survior区中，而Eden区和另一块Survior区是空的。这种形式的GC叫“拷贝收集（Copy Collection）”。Yong区中多次GC后仍存活的对象会被提升/拷贝到Old区。
+ 
+3） Old区 GC：标记和打扫（Mark & Sweep)算法是老生区(OldHeap)使用的GC算法，与新生代Yong区算法不同的地方在于它不拷贝对象。对象越多GC消耗时间越长，因此老生区GC代价很高并尽量避免，因此我们需要保证对象仅仅从Yong区拷贝到Old区并保证Old区不被填满，因此，代区的大小是Hotspot JVM中单一的一个最重要的优化参数。如果我们不能阻止对象从Yong区拷贝到Old区，我们可以使用“并发标记和打扫算法”（CMS -Concurrent Mark and Sweep)，此算法可以并行的进行收集操作。（停顿时间：串行(Serial) <平行(Parallel) <并发(Concurrent)）。
+ 
+Old区GC还有其他问题，比如“碎片问题”会导致“慢分配”，更长的打扫时间并最终会导致OOM（当分配大对象而遇到的全是小空间时）.
+ 
+碎片问题可通过被称为“压缩”的方法来解决。“串行和平行算法（Serialand Parallel)”会在每次Old区进行GC时进行压缩，它不对整个Old区压缩而只对Old区中碎片程度达到一定Level的区域区进行。相比之下，“并发标记和打扫算法CMS”根本就不会进行压缩。当对象不能再被分配时，一个串行的“主要MajorGC”会被触发。
+ 
+因此，HotSpot 的第二个调整参数是选择正确的GC策略，GC策略的选择会影响应用的性能，HotSpot中的大部分GC策略调整选项参数是是关于分片和压缩的， HotspotJVM没有提供太多调整参数，因此，唯一的方法是优化代码减少申请对象的次数。
+ 
+4) Permanent Generation 永久区：保存属于类的（静态的）属性和字符串常量等，永久区的GC只会发生在“主要Major GC”时（Major GC很少发生），因此很多人认为Hotspot JVM在永久区根本不会GC。
+ 
+Major GC - “Stops the world” and“cost much time”, e.g. Full GC.
+ 
+OracleJRockit
+ 
+1) Oracle WebLogic使用的JVM，将来会和Hotspot合并
+ 
+2) Heap策略 -也使用“分代Heap”，而且支持一个所谓的“连续Heap”。分代Heap分为：老生区（Old/Tenured)和苗圃/新生区（Nursery)，当对象被申请时，他们被放在一个新生区中称为Keep Area的地方，在GC时，Keep Area不会被考虑而其它仍然存活的对象会被马上移到老生区。因此，新生区的大小是JRockit很重要的参数。JRockit在第二次新生代GC时就会拷贝那些对象到Old区。
+ 
+JRockit的“连续Heap”不区分“新”和“老”的对象，常常在特定的情况下比如以大吞吐量下的批量任务会产生很好的性能，它是JRockit Server JVM模式下的默认设置，而且往往不是正确的选择，因为典型的Web应用不是面向吞吐量而是面向响应时间，因此人们往往会选择低停顿时间模式和分代GC策略。
+ 
+3) CMS -
+大部分的CMS标记阶段可分为4个部分
+    1. 初始标记 -标记生成Live对象的Root集合 - Java Thread会被paused
+    2 并发标记 -根据root集合中的对象查找并标记其引用的Live对象 -- Java Thread正常运行
+    3 预清理 -找出“并发标记”发现的需要修改的地方并发现和标记其它额外的Live对象-- Java Thread正常运行
+    4 最终标记-找出在预清理阶段发现的需要改变的地方并发现和标记其它额外的Live对象 -- Java Thread会被Paused
+ 
+CMS 打扫阶段也和 Application并发执行，  但和Hotspot JVM的分2个阶段相比，JRockit会先清扫Heap的第一半部分，在此阶段，线程会被允许在Heap的第二半部分进行对象申请。在一个短暂的同步停顿后，会打扫第二半部分然后会有一个短暂的最后的停顿期。
+因此，JRockit的算法比HotSpot的算法停顿更多，但是标记阶段会短一些。而且它不像HotSpot JVM那样可以通过调整未用内存的百分比来触发GC。
+ 
+4) 压缩
+JRockit 在所有的Old老生区GC进行压缩，包括CMS。它通过一种按Heap中分区增量的模式进行的，这些各类参数可以调整，比如按堆百分比压缩，或最大多少对象会被压缩，而且你可以完全把压缩关掉或者在GC时进行“完全压缩”。因此可配置性比HotSpot更强。
+ 
+5) 线程本地分配TLA（Thread Local Allocation)
+JRockit默认使用线程本地分配TLA,这允许线程不需要同步即可分配对象，这将有利于分配速度，TLA的大小而且可以配置，大的TLA可以优化使用大量线程本地分配对象的应用，另一方面，太大的TLA会导致更多的碎片，因为TLA是被线程以排斥的方式独有的，因此受限于线程数并依赖于应用的架构。
+ 
+6) 大对象和小对象
+JRockit在分配大对象和小对象时区别对待，大小的定义在JVM的版本不同而不同，常常2-128Kb之间，大对象在线程本地意外的Old区分配，而新生Yong区使用“拷贝收集-Copy Collection （见Hotspot Yong区GC）”，在某些点，拷贝一个对象变得比它被GC更消耗。
+ 
+7) 没有永久区 -- JRockit JVM没有永久区, 所有类的属性和字符串常量放在通常的Heap区域，因此如果它不再被使用，会被马上回收。
+ 
+IBM JVM
+ 
+IBM JVM 被IBMWebsphere使用，它和JRockit有很多相同地方，它默认的使用一个“连续的Heap”，特别是在Websphere安装过程中，这往往是导致最初的低性能的原因。它和JRockit一样区分大小对象，并默认使用线程本地分配TLA，它也没有“永久区”，但是IBM JVM也支持分代模型并且看起来更像HotSpot JVM，比如它的分代模型包括“新生区”和“老生区”，新生区又分为“分配区（Allocate）”和“Survior区”，新对象在Allocate区分配并在GC时拷贝到Survior区，这意味着一个对象在被移动到Old区时会被在2个区之间多次拷贝.和JRockit一样，IBM JVM有多个选项可以配置“压缩”阶段，可以配置为“关闭”或“每次GC都进行压缩”，和JRockit相比，默认的触发条件是由于一系列的触发而不是导致“完全”压缩，而且这个可以被配置选项更改。

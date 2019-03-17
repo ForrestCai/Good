@@ -15,5 +15,7 @@ public class TestProcessor implements Processor {
         logger.debug("Processing" + exchange);
         logger.error("Processing" + exchange);
         audittraceLogger.info("audit test!");
+
+        Thread.sleep(10000);
     }
 }

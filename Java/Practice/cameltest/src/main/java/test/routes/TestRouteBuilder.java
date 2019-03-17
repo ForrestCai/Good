@@ -3,6 +3,7 @@ package test.routes;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.impl.converter.AsyncProcessorTypeConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import test.processors.TestProcessor;
@@ -15,6 +16,8 @@ public class TestRouteBuilder extends RouteBuilder {
 
     public void configure() {
         from("timer://timer1?period=10000")
-                .process(processor);
+                .process(AsyncProcessorTypeConverter.convert(processor))
+                .setBody(constant("hahahahahah"))
+        .to("stream:out");
     }
 }

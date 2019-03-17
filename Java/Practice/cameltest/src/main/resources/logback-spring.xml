@@ -10,7 +10,9 @@
     <contextName>logback</contextName>
     <!-- name的值是变量的名称，value的值时变量定义的值。通过定义的值会被插入到logger上下文中。定义变量后，可以使“${}”来使用变量。 -->
     <property name="log.path" value="C:/Log"/>
-    <contextListener class="test.LoggerStartupListener" />
+
+    <springProperty scope="context" name="appnname" source="spring.application.name"/>
+    <!--<contextListener class="test.LoggerStartupListener" />-->
     <!-- 彩色日志 -->
     <!-- 彩色日志依赖的渲染类 -->
     <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter"/>
@@ -40,7 +42,7 @@
     <!-- 时间滚动输出 level为 DEBUG 日志 -->
     <appender name="AuditTrace_File" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <!-- 正在记录的日志文件的路径及文件名 -->
-        <file>${log.path}/${APP_NAME}/audittrace.log</file>
+        <file>${log.path}/${appnname}_${hostname}/audittrace.log</file>
         <!--日志文件输出格式-->
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
